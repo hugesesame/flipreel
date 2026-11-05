@@ -1,0 +1,297 @@
+// UI strings. English is the default; Japanese is a full translation.
+// On-screen labels stay short and use standard video terms (Transition, Cut,
+// Fade, Black). The friendly, plain-language explanations live in help.ts.
+
+export type Lang = 'en' | 'ja';
+
+const en = {
+  appTagline: 'Turn photos into a slideshow video',
+  help: 'Help',
+  helpFor: 'Help for this step',
+  langSwitch: '日本語',
+  langSwitchLabel: 'Switch to Japanese',
+  themeToLight: 'Switch to light mode',
+  themeToDark: 'Switch to dark mode',
+  back: 'Back',
+  next: 'Next',
+  close: 'Close',
+  stepOf: 'Step {n} of {total}',
+  summary: '{count} photos · {length}',
+  summaryOne: '1 photo · {length}',
+
+  // Step names (stepper)
+  stepPhotos: 'Photos',
+  stepAspect: 'Aspect Ratio',
+  stepFormat: 'Format',
+  stepDuration: 'Duration',
+  stepTransition: 'Transition',
+  stepBlack: 'Black',
+  stepExport: 'Export',
+
+  // Step 1 — Photos
+  photosTitle: 'Choose your photos',
+  photosLead: 'Add the photos you want in your video.',
+  dropHere: 'Drop photos here',
+  or: 'or',
+  choosePhotos: 'Choose photos',
+  addMore: 'Add more',
+  sortByName: 'Sort by name',
+  removeAll: 'Remove all',
+  photoCount: '{count} photos',
+  photoCountOne: '1 photo',
+  reorderHint: 'Drag to reorder, or use the arrows.',
+  moveEarlier: 'Move earlier',
+  moveLater: 'Move later',
+  remove: 'Remove',
+  loadingPhotos: 'Loading photos… {done} / {total}',
+  unsupportedFiles: "Couldn't open {count} file(s): {names}",
+  unsupportedHint: 'See Help for which files work.',
+  addedPhotos: 'Added {count} photo(s).',
+  needPhotos: 'Add at least one photo to continue.',
+  confirmRemoveAll: 'Click again to remove all',
+
+  // Step 2 — Aspect
+  aspectTitle: 'Aspect ratio',
+  aspectLead: 'Pick the shape of the video.',
+  aspect169: 'Widescreen',
+  aspect169Note: 'YouTube, TV, PC',
+  aspect43: 'Standard',
+  aspect43Note: 'Slides, older TVs',
+  aspect11: 'Square',
+  aspect11Note: 'Social feeds',
+  aspect916: 'Vertical',
+  aspect916Note: 'Phones, Reels, Shorts',
+  fitLabel: 'Photo framing',
+  fitFit: 'Fit',
+  fitFitNote: 'Whole photo, black bars',
+  fitFill: 'Fill',
+  fitFillNote: 'Fill frame, edges cropped',
+  previewOfFirst: 'Preview with your first photo',
+
+  // Step 3 — Format
+  formatTitle: 'File format',
+  formatLead: 'Choose the kind of video file.',
+  formatMp4Note: 'Plays almost anywhere',
+  formatWebmNote: 'For the web',
+  recommended: 'Recommended',
+  checkingSupport: 'Checking your browser…',
+  notSupported: "This browser can't create this format.",
+  noFormatSupported: "This browser can't create videos. Please use the latest Google Chrome or Microsoft Edge.",
+  outputSpec: '{w} × {h} · 30 fps',
+
+  // Step 4 — Duration
+  durationTitle: 'Duration',
+  durationLead: 'How long each photo stays on screen.',
+  perPhoto: 'Per photo',
+  seconds: 'sec',
+  secondsShort: '{n}s',
+  decrease: 'Decrease',
+  increase: 'Increase',
+  totalLength: 'Total video length',
+
+  // Step 5 — Transition
+  transitionTitle: 'Transition',
+  transitionLead: 'How one photo changes to the next.',
+  cut: 'Cut',
+  fade: 'Fade',
+  fadeDuration: 'Fade duration',
+
+  // Step 6 — Black
+  blackTitle: 'Black',
+  blackLead: 'Black screen at the start and end.',
+  blackStart: 'Start',
+  blackEnd: 'End',
+  timeline: 'Timeline',
+
+  // Step 7 — Export
+  exportTitle: 'Export',
+  exportLead: 'Check the preview, then save your video.',
+  play: 'Play',
+  pause: 'Pause',
+  seek: 'Seek',
+  sumPhotos: 'Photos',
+  sumAspect: 'Aspect ratio',
+  sumFormat: 'Format',
+  sumDuration: 'Per photo',
+  sumTransition: 'Transition',
+  sumBlack: 'Black (start / end)',
+  sumLength: 'Total length',
+  sumSize: 'Size',
+  edit: 'Edit',
+  saveAndCreate: 'Choose where to save',
+  saveAndCreateNote: "You'll pick a folder and file name first.",
+  createAndDownload: 'Create & download',
+  downloadNote: "This browser can't choose a folder, so the video goes to your Downloads folder. See Help to change this.",
+  creating: 'Creating your video…',
+  creatingNote: 'Keep this tab open until it finishes.',
+  cancel: 'Cancel',
+  cancelled: 'Cancelled.',
+  done: 'Done!',
+  savedAs: 'Saved as {name}',
+  downloadedAs: 'Downloaded as {name}',
+  openFolderHint: 'Find it in the folder you chose.',
+  downloadFolderHint: 'Find it in your Downloads folder.',
+  exportAgain: 'Save another copy',
+  startOver: 'Start a new video',
+  confirmStartOver: 'Click again to clear everything',
+  exportFailed: 'Something went wrong while creating the video.',
+  exportFailedHint: 'Try WebM, a smaller number of photos, or the latest Chrome. Details: {msg}',
+  leaveWarning: 'Your photos will be cleared if you leave.',
+
+  // Help dialog
+  helpTitle: 'Help',
+  helpTopics: 'Topics',
+} as const;
+
+export type Key = keyof typeof en;
+
+const ja: Record<Key, string> = {
+  appTagline: '写真からスライド動画を作る',
+  help: 'ヘルプ',
+  helpFor: 'このステップのヘルプ',
+  langSwitch: 'English',
+  langSwitchLabel: '英語に切り替え',
+  themeToLight: 'ライトモードに切り替え',
+  themeToDark: 'ダークモードに切り替え',
+  back: '戻る',
+  next: '次へ',
+  close: '閉じる',
+  stepOf: 'ステップ {n} / {total}',
+  summary: '写真 {count} 枚 · {length}',
+  summaryOne: '写真 1 枚 · {length}',
+
+  stepPhotos: '写真',
+  stepAspect: 'アスペクト比',
+  stepFormat: 'ファイル形式',
+  stepDuration: '表示時間',
+  stepTransition: 'トランジション',
+  stepBlack: '黒み',
+  stepExport: '書き出し',
+
+  photosTitle: '写真を選ぶ',
+  photosLead: '動画に使う写真を追加してください。',
+  dropHere: 'ここに写真をドロップ',
+  or: 'または',
+  choosePhotos: '写真を選ぶ',
+  addMore: '写真を追加',
+  sortByName: '名前順に並べる',
+  removeAll: 'すべて削除',
+  photoCount: '{count} 枚',
+  photoCountOne: '1 枚',
+  reorderHint: 'ドラッグか矢印ボタンで並べ替えできます。',
+  moveEarlier: '前へ移動',
+  moveLater: '後ろへ移動',
+  remove: '削除',
+  loadingPhotos: '写真を読み込み中… {done} / {total}',
+  unsupportedFiles: '{count} 個のファイルを開けませんでした：{names}',
+  unsupportedHint: '使えるファイルはヘルプをご覧ください。',
+  addedPhotos: '写真を {count} 枚追加しました。',
+  needPhotos: '写真を 1 枚以上追加すると次へ進めます。',
+  confirmRemoveAll: 'もう一度押すとすべて削除',
+
+  aspectTitle: 'アスペクト比',
+  aspectLead: '動画の画面の形を選んでください。',
+  aspect169: 'ワイド',
+  aspect169Note: 'YouTube・テレビ・PC',
+  aspect43: 'スタンダード',
+  aspect43Note: 'スライド・昔のテレビ',
+  aspect11: 'スクエア',
+  aspect11Note: 'SNS の投稿',
+  aspect916: '縦長',
+  aspect916Note: 'スマホ・リール・ショート',
+  fitLabel: '写真の収め方',
+  fitFit: 'フィット',
+  fitFitNote: '写真全体を表示（余白は黒）',
+  fitFill: 'フィル',
+  fitFillNote: '画面いっぱい（端を切る）',
+  previewOfFirst: '1 枚目の写真でのプレビュー',
+
+  formatTitle: 'ファイル形式',
+  formatLead: '動画ファイルの種類を選んでください。',
+  formatMp4Note: 'ほとんどの機器で再生できます',
+  formatWebmNote: 'Web 向け',
+  recommended: 'おすすめ',
+  checkingSupport: 'ブラウザを確認しています…',
+  notSupported: 'このブラウザではこの形式を作れません。',
+  noFormatSupported: 'このブラウザでは動画を作れません。最新の Google Chrome か Microsoft Edge をお使いください。',
+  outputSpec: '{w} × {h} · 30 fps',
+
+  durationTitle: '表示時間',
+  durationLead: '写真 1 枚を表示する長さです。',
+  perPhoto: '1 枚あたり',
+  seconds: '秒',
+  secondsShort: '{n}秒',
+  decrease: '減らす',
+  increase: '増やす',
+  totalLength: '動画全体の長さ',
+
+  transitionTitle: 'トランジション',
+  transitionLead: '写真から次の写真への切り替え方です。',
+  cut: 'カット',
+  fade: 'フェード',
+  fadeDuration: 'フェードの長さ',
+
+  blackTitle: '黒み',
+  blackLead: '動画の最初と最後に入れる黒い画面です。',
+  blackStart: '最初',
+  blackEnd: '最後',
+  timeline: 'タイムライン',
+
+  exportTitle: '書き出し',
+  exportLead: 'プレビューを確認して、動画を保存しましょう。',
+  play: '再生',
+  pause: '一時停止',
+  seek: '再生位置',
+  sumPhotos: '写真',
+  sumAspect: 'アスペクト比',
+  sumFormat: 'ファイル形式',
+  sumDuration: '1 枚あたり',
+  sumTransition: 'トランジション',
+  sumBlack: '黒み（最初 / 最後）',
+  sumLength: '全体の長さ',
+  sumSize: 'サイズ',
+  edit: '変更',
+  saveAndCreate: '保存先を選ぶ',
+  saveAndCreateNote: '先に保存するフォルダとファイル名を選びます。',
+  createAndDownload: '作成してダウンロード',
+  downloadNote: 'このブラウザでは保存先を選べないため、「ダウンロード」フォルダに保存されます。変更方法はヘルプをご覧ください。',
+  creating: '動画を作成しています…',
+  creatingNote: '終わるまでこのタブを閉じないでください。',
+  cancel: 'キャンセル',
+  cancelled: 'キャンセルしました。',
+  done: '完成しました！',
+  savedAs: '{name} として保存しました',
+  downloadedAs: '{name} としてダウンロードしました',
+  openFolderHint: '選んだフォルダに保存されています。',
+  downloadFolderHint: '「ダウンロード」フォルダに保存されています。',
+  exportAgain: 'もう一度保存する',
+  startOver: '新しい動画を作る',
+  confirmStartOver: 'もう一度押すとすべて消去',
+  exportFailed: '動画の作成中に問題が起きました。',
+  exportFailedHint: 'WebM にする、写真の枚数を減らす、最新の Chrome を使う、などをお試しください。詳細：{msg}',
+  leaveWarning: 'ページを離れると写真は消去されます。',
+
+  helpTitle: 'ヘルプ',
+  helpTopics: '項目',
+};
+
+const dict: Record<Lang, Record<Key, string>> = { en, ja };
+
+let current: Lang = 'en';
+
+export function setLang(lang: Lang): void {
+  current = lang;
+  document.documentElement.lang = lang;
+}
+
+export function getLang(): Lang {
+  return current;
+}
+
+export function t(key: Key, params?: Record<string, string | number>): string {
+  let s = dict[current][key];
+  if (params) {
+    for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
+  }
+  return s;
+}
