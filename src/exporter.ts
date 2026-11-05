@@ -42,7 +42,7 @@ export function canChooseSaveLocation(): boolean {
 export function suggestedFileName(format: Format, now = new Date()): string {
   const p = (n: number) => String(n).padStart(2, '0');
   const stamp = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}`;
-  return `flipbook-${stamp}.${format}`;
+  return `flipreel-${stamp}.${format}`;
 }
 
 /** Opens the native "Save as" dialog. Returns null if the user cancelled. Must be called from a click. */

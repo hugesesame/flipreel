@@ -146,8 +146,8 @@ function applyHistory(dir: 'undo' | 'redo'): void {
 
 function store(key: string, value?: string): string | null {
   try {
-    if (value === undefined) return localStorage.getItem(`flipbook:${key}`);
-    localStorage.setItem(`flipbook:${key}`, value);
+    if (value === undefined) return localStorage.getItem(`flipreel:${key}`);
+    localStorage.setItem(`flipreel:${key}`, value);
   } catch {
     /* storage unavailable — fine */
   }
@@ -276,7 +276,7 @@ function renderHeader(): string {
   const dark = document.documentElement.dataset.theme === 'dark';
   return `
   <header class="topbar">
-    <div class="brand">${icons.logo}<div><span class="brand-name">Flipbook</span><span class="brand-tag">${t('appTagline')}</span></div></div>
+    <div class="brand">${icons.logo}<div><span class="brand-name"><b>Flip</b> Reel</span><span class="brand-tag">${t('appTagline')}</span></div></div>
     <nav class="top-actions">
       <button class="ghost icon-only" data-action="undo" data-focus="undo" ${history.canUndo && canEditHistory() ? '' : 'disabled'} aria-label="${t('undo')} (${UNDO_KEYS})" title="${t('undo')} (${UNDO_KEYS})">${icons.undo}</button>
       <button class="ghost icon-only" data-action="redo" data-focus="redo" ${history.canRedo && canEditHistory() ? '' : 'disabled'} aria-label="${t('redo')} (${REDO_KEYS})" title="${t('redo')} (${REDO_KEYS})">${icons.redo}</button>

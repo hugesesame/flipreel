@@ -45,7 +45,7 @@ const en: Record<HelpTopic, Entry> = {
   start: {
     title: 'Getting started',
     body: `
-<p>Flipbook turns your photos into a video that shows them one after another — like flipping through a photo album.</p>
+<p>Flip Reel turns your photos into a video that shows them one after another — like flipping through a photo album.</p>
 <p>You only need to go through 7 short steps. <strong>Every step already has a sensible setting</strong>, so if you're not sure, just press <kbd>Next</kbd>.</p>
 <ol class="help-steps">
   <li><strong>Photos</strong> — choose the photos and their order.</li>
@@ -60,7 +60,7 @@ const en: Record<HelpTopic, Entry> = {
 <h3>Made a mistake? Undo it</h3>
 <p>Press <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Z</kbd> (Windows) to undo the last change — removing a photo, changing the order, or changing a setting. You can undo again and again.</p>
 <p>To redo what you undid, press <kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Y</kbd> (Windows). The ${undoRedo} buttons at the top right do the same — on a phone or tablet, use these buttons.</p>
-<div class="help-note"><strong>Your photos stay on your computer.</strong> Flipbook works completely offline. Nothing is uploaded anywhere.</div>`,
+<div class="help-note"><strong>Your photos stay on your device.</strong> Everything happens inside your browser. Nothing is uploaded anywhere.</div>`,
   },
   photos: {
     title: 'Choosing photos',
@@ -169,9 +169,9 @@ const en: Record<HelpTopic, Entry> = {
   browsers: {
     title: 'Browsers, offline use & privacy',
     body: `
-<p>Flipbook works best in the latest <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>. Recent Safari and Firefox work too, but can only save to the Downloads folder.</p>
+<p>Flip Reel works best in the latest <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>. Recent Safari and Firefox work too, but can only save to the Downloads folder.</p>
 <p>On phones and tablets, use <strong>Safari</strong> on iPhone / iPad (iOS 17 or later) or <strong>Chrome</strong> on Android.</p>
-<p>Flipbook is a single file. You can keep it on your computer and open it any time — <strong>no internet connection is needed</strong>.</p>
+<p>Flip Reel is a single web page. Open it from its web address, or save the page to your computer (as <code>flipreel.html</code>) and open it any time — <strong>no internet connection is needed</strong>.</p>
 <div class="help-note"><strong>Privacy:</strong> your photos never leave your computer. Everything — reading the photos and making the video — happens inside your browser.</div>`,
   },
   trouble: {
@@ -198,7 +198,7 @@ const ja: Record<HelpTopic, Entry> = {
   start: {
     title: 'はじめに',
     body: `
-<p>Flipbook（フリップブック）は、写真を 1 枚ずつ順番に見せる動画を作るアプリです。アルバムをめくっていくような動画ができます。</p>
+<p>Flip Reel（フリップリール）は、写真を 1 枚ずつ順番に見せる動画を作るアプリです。アルバムをめくっていくような動画ができます。</p>
 <p>やることは 7 つの短いステップだけです。<strong>どのステップにも最初からちょうどよい設定が入っている</strong>ので、迷ったら <kbd>次へ</kbd> を押すだけで大丈夫です。</p>
 <ol class="help-steps">
   <li><strong>写真</strong> — 使う写真と、その順番を決めます。</li>
@@ -213,7 +213,7 @@ const ja: Record<HelpTopic, Entry> = {
 <h3>まちがえたときは「取り消し」</h3>
 <p><kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Z</kbd>（Windows）を押すと、直前の操作を取り消して元に戻せます。写真の削除や並べ替え、設定の変更など、何回でもさかのぼれます。</p>
 <p>取り消した操作をもう一度やり直したいときは、<kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Y</kbd>（Windows）を押します。画面右上の ${undoRedo} ボタンでも同じことができます。スマホ・タブレットではこのボタンを使ってください。</p>
-<div class="help-note"><strong>写真はお使いのパソコンの中だけで扱われます。</strong>Flipbook はインターネットにつながっていなくても動き、写真がどこかに送られることはありません。</div>`,
+<div class="help-note"><strong>写真はお使いの端末の中だけで扱われます。</strong>すべての処理はブラウザの中で行われ、写真がどこかに送られることはありません。</div>`,
   },
   photos: {
     title: '写真の選び方',
@@ -322,9 +322,9 @@ const ja: Record<HelpTopic, Entry> = {
   browsers: {
     title: '対応ブラウザ・オフライン・プライバシー',
     body: `
-<p>Flipbook は、最新の <strong>Google Chrome</strong> か <strong>Microsoft Edge</strong> でいちばんよく動きます。新しい Safari や Firefox でも使えますが、保存先は「ダウンロード」フォルダになります。</p>
+<p>Flip Reel は、最新の <strong>Google Chrome</strong> か <strong>Microsoft Edge</strong> でいちばんよく動きます。新しい Safari や Firefox でも使えますが、保存先は「ダウンロード」フォルダになります。</p>
 <p>スマホ・タブレットでは、iPhone / iPad の <strong>Safari</strong>（iOS 17 以降）か、Android の <strong>Chrome</strong> をお使いください。</p>
-<p>Flipbook は 1 つのファイルだけでできています。パソコンに保存しておけば、いつでも開いて使えます。<strong>インターネットへの接続は必要ありません。</strong></p>
+<p>Flip Reel は 1 枚の Web ページでできています。Web のアドレスから開くほか、ページをパソコンに保存（<code>flipreel.html</code>）しておけば、いつでも開いて使えます。<strong>インターネットへの接続は必要ありません。</strong></p>
 <div class="help-note"><strong>プライバシーについて：</strong>写真がお使いのパソコンの外に出ることはありません。写真の読み込みも動画づくりも、すべてブラウザの中で行われます。</div>`,
   },
   trouble: {

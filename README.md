@@ -1,12 +1,20 @@
-# Flipbook
+# Flip Reel
 
 **English** | [日本語](README.ja.md)
 
-Turn still photos into a slideshow video — right in your browser.
+Turn your photos into a slideshow video — right in your browser.
 
-Flipbook is a single HTML file. Open it, add your photos, answer seven short questions, and save an MP4 or WebM video. It works offline, and your photos never leave your computer.
+Add photos, answer seven short questions, and save an MP4 or WebM video. Everything happens on your device: your photos are never uploaded.
 
-> "Flipbook" is a working title.
+**▶ Try it: [hugesesame.github.io/flipreel](https://hugesesame.github.io/flipreel/)**
+
+![Choosing photos in Flip Reel](assets/screenshots/photos.png)
+
+| Aspect ratio and framing | Preview and export |
+| --- | --- |
+| ![Aspect ratio step with a live preview of the first photo](assets/screenshots/aspect.png) | ![Export step with the finished video card](assets/screenshots/export.png) |
+
+![Flip Reel on a phone: choosing photos (English, light) and the finished video (Japanese, dark)](assets/screenshots/phones.png)
 
 ## Features
 
@@ -16,33 +24,33 @@ Flipbook is a single HTML file. Open it, add your photos, answer seven short que
 - **Formats**: MP4 (H.264) or WebM (VP9), full HD (short side 1080 px), 30 fps
 - **Transitions**: Cut or Fade, with adjustable fade length
 - **Black** lead-in and lead-out
-- **Undo / redo** (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) for photo and setting changes
 - **Preview** before export
-- **Choose where to save** (Chrome / Edge)
+- **Undo / redo** (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) for photo and setting changes
+- **Choose where to save** (Chrome / Edge on a computer)
 - **Phones and tablets**: press and hold to reorder photos, save to Photos or share via the share sheet, screen stays on while the video is made
 - **Built-in Help** that explains every step in plain language
 - **English / Japanese** UI, **light / dark** theme
-- **Offline and private**: everything runs locally in the browser
+- **Private and offline**: the whole app is one HTML file that runs entirely in your browser
 
-## Using Flipbook
+## Using Flip Reel
 
-1. Get `flipbook.html` (see [Building](#building) below).
-2. Double-click it to open it in **Google Chrome** or **Microsoft Edge**.
-3. Follow the steps. If you get stuck, press **Help**.
+**Online** — open [hugesesame.github.io/flipreel](https://hugesesame.github.io/flipreel/) in your browser. This is the way to use it on a phone or tablet.
+
+**Offline** — download [flipreel.html](https://hugesesame.github.io/flipreel/flipreel.html) (right-click › *Save Link As…*), then double-click it to open it in Google Chrome or Microsoft Edge. No internet connection needed.
+
+Follow the steps. If you get stuck, press **Help**.
 
 ### Browser support
 
-| Browser | Make videos | Choose where to save |
+| Browser | Make videos | Saving |
 | --- | --- | --- |
-| Chrome / Edge (latest) | ✅ | ✅ |
-| Safari 17+ | ✅ | — Saves to Downloads |
-| Firefox 130+ | ✅ | — Saves to Downloads |
-| iPhone / iPad: Safari (iOS 17+) | ✅ | Share sheet → *Save Video* to Photos |
-| Android: Chrome | ✅ | Share sheet, or Downloads |
+| Chrome / Edge (latest) | ✅ | Choose a folder and file name |
+| Safari 17+ (Mac) | ✅ | Downloads folder |
+| Firefox 130+ | ✅ | Downloads folder |
+| Safari on iPhone / iPad (iOS 17+) | ✅ | Share sheet → *Save Video* to Photos |
+| Chrome on Android | ✅ | Share sheet, or Downloads |
 
-Flipbook has been tested in Chrome on a computer and in Chrome's phone emulation. Safari, Firefox and real phones should work based on their WebCodecs support, but haven't been tested yet.
-
-Phones can't run an HTML file saved on the device, so on a phone Flipbook needs to be opened from a web address.
+Flip Reel has been tested in Chrome on a computer and in Chrome's phone emulation. Safari, Firefox and real phones should work based on their WebCodecs support, but haven't been tested yet.
 
 The Help screen explains how to make Safari and Firefox ask where to save every download.
 
@@ -50,41 +58,45 @@ HEIC photos (iPhone) open in Safari only; in other browsers, convert them to JPE
 
 ## Building
 
-Requires [Node.js](https://nodejs.org/) 20 or later.
+Requires [Node.js](https://nodejs.org/) 22 or later.
 
 ```sh
 npm install
-npm run build      # → dist/flipbook.html (single self-contained file)
+npm run build      # → dist/flipreel.html (single self-contained file)
 ```
 
 During development:
 
 ```sh
-npm run dev        # then open http://localhost:5173/flipbook.html
+npm run dev        # then open http://localhost:5173/flipreel.html
 npm run typecheck
 ```
+
+Every push to `main` builds the app and publishes it to GitHub Pages ([.github/workflows/pages.yml](.github/workflows/pages.yml)).
 
 ## How it works
 
 - Photos are decoded with `createImageBitmap` and drawn onto a canvas, one frame at a time.
 - Frames are encoded with the browser's [WebCodecs](https://developer.mozilla.org/docs/Web/API/WebCodecs_API) API and packaged into MP4/WebM with [Mediabunny](https://mediabunny.dev/).
-- In Chrome/Edge, the video is streamed straight to the file you picked with the [File System Access API](https://developer.mozilla.org/docs/Web/API/Window/showSaveFilePicker). Other browsers build it in memory and download it.
+- In Chrome/Edge on a computer, the video is streamed straight to the file you picked with the [File System Access API](https://developer.mozilla.org/docs/Web/API/Window/showSaveFilePicker). Phones hand the finished video to the [share sheet](https://developer.mozilla.org/docs/Web/API/Navigator/share); other browsers download it.
 - [Vite](https://vite.dev/) and [vite-plugin-singlefile](https://github.com/richardtallent/vite-plugin-singlefile) inline all JavaScript and CSS into one HTML file, so no network access is needed.
 
 ### Project layout
 
 ```
-flipbook.html      Entry HTML
+flipreel.html      Entry HTML
 src/main.ts        UI, steps, preview player, actions
 src/timeline.ts    Timeline model and frame drawing (shared by preview and export)
 src/exporter.ts    Encoding and saving
 src/photos.ts      Loading photos and thumbnails
+src/reorder.ts     Drag to reorder (mouse, touch, pen)
+src/history.ts     Undo / redo history
 src/i18n.ts        UI strings (English / Japanese)
 src/help.ts        Help content (English / Japanese)
-src/history.ts     Undo / redo history
-src/reorder.ts     Drag to reorder (mouse, touch, pen)
 src/style.css      Styles, light and dark themes
 ```
+
+The sample photos in the screenshots are illustrations drawn for this README.
 
 ## Roadmap
 

@@ -9,7 +9,7 @@ export default defineConfig({
     target: 'es2022',
     outDir: 'dist',
     rollupOptions: {
-      input: 'flipbook.html',
+      input: 'flipreel.html',
     },
   },
 });
