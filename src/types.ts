@@ -52,3 +52,13 @@ export const LIMITS = {
   fade: { min: 0.1, max: 5, step: 0.1 },
   black: { min: 0, max: 10, step: 0.5 },
 } as const;
+
+/** The one optional song. */
+export interface Music {
+  file: File;
+  name: string;
+  /** Seconds. */
+  duration: number;
+  /** Object URL of the file, for the preview player. */
+  url: string;
+}

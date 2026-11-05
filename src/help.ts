@@ -12,6 +12,7 @@ export type HelpTopic =
   | 'transition'
   | 'black'
   | 'export'
+  | 'music'
   | 'browsers'
   | 'trouble';
 
@@ -24,6 +25,7 @@ export const HELP_ORDER: HelpTopic[] = [
   'transition',
   'black',
   'export',
+  'music',
   'browsers',
   'trouble',
 ];
@@ -54,7 +56,7 @@ const en: Record<HelpTopic, Entry> = {
   <li><strong>Duration</strong> — how many seconds each photo is shown.</li>
   <li><strong>Transition</strong> — how one photo changes into the next.</li>
   <li><strong>Black</strong> — a moment of black screen at the start and end.</li>
-  <li><strong>Export</strong> — watch a preview, then save the video.</li>
+  <li><strong>Export</strong> — watch a preview, add a song if you like, then save the video.</li>
 </ol>
 <p>You can go back to any step at any time with <kbd>Back</kbd> or by clicking the step names at the top. Nothing is lost.</p>
 <h3>Made a mistake? Undo it</h3>
@@ -166,6 +168,28 @@ const en: Record<HelpTopic, Entry> = {
 <h3>While the video is being made</h3>
 <p>A bar shows how far along it is. Please keep the tab open until it says <strong>Done!</strong>. You can press <kbd>Cancel</kbd> at any time.</p>`,
   },
+  music: {
+    title: 'Music (optional)',
+    body: `
+<p>You can add <strong>one song</strong> to your video. It's optional — without a song, the video has no sound.</p>
+<h3>Adding a song</h3>
+<p>On the <strong>Export</strong> step, press <kbd>+ Add</kbd> next to <em>Music</em> and choose a song file. On a computer you can also drop a song file onto the page.</p>
+<ul>
+  <li><strong>Files that work</strong> — MP3, M4A (AAC) and WAV. Most browsers also read OGG and FLAC.</li>
+  <li><strong>iPhone / iPad</strong> — songs are chosen from the <em>Files</em> app. Songs in the Music app (Apple Music or bought songs) are protected and can't be used.</li>
+</ul>
+<h3>How the song fits the video</h3>
+<p>There is nothing to set:</p>
+<ul>
+  <li>The song starts together with the video.</li>
+  <li><strong>Song longer than the video</strong> — it stops where the video ends, fading out gently over the black at the end.</li>
+  <li><strong>Song shorter than the video</strong> — it plays once, and the rest of the video is silent.</li>
+</ul>
+<p>The small line under <em>Music</em> tells you which one applies. To make the video about as long as the song, change <strong>Duration</strong> (seconds per photo).</p>
+<p>To use a different song, press <kbd>× Remove</kbd>, then add the new one.</p>
+<div class="help-note caution"><strong>Use music you're allowed to use.</strong> Most songs are protected by copyright. Your own recordings or royalty-free music are the safest. Some social networks mute or remove videos with copyrighted songs.</div>
+<p>On iPhone and iPad the preview doesn't fade out at the end, but the finished video does.</p>`,
+  },
   browsers: {
     title: 'Browsers, offline use & privacy',
     body: `
@@ -207,7 +231,7 @@ const ja: Record<HelpTopic, Entry> = {
   <li><strong>表示時間</strong> — 写真 1 枚を何秒見せるかです。</li>
   <li><strong>トランジション</strong> — 写真から次の写真への切り替え方です。</li>
   <li><strong>黒み</strong> — 最初と最後に入れる黒い画面の時間です。</li>
-  <li><strong>書き出し</strong> — プレビューを見て、動画を保存します。</li>
+  <li><strong>書き出し</strong> — プレビューを見て、よければ曲を入れて、動画を保存します。</li>
 </ol>
 <p><kbd>戻る</kbd> ボタンや、画面上部のステップ名を押せば、いつでも前のステップに戻れます。設定が消えることはありません。</p>
 <h3>まちがえたときは「取り消し」</h3>
@@ -318,6 +342,28 @@ const ja: Record<HelpTopic, Entry> = {
 </ul>
 <h3>動画を作っている間</h3>
 <p>どこまで進んだかがバーで表示されます。<strong>「完成しました！」</strong>と表示されるまで、タブを閉じずにお待ちください。<kbd>キャンセル</kbd> でいつでも中止できます。</p>`,
+  },
+  music: {
+    title: '音楽（なくても OK）',
+    body: `
+<p>動画に<strong>曲を 1 曲</strong>入れられます。入れなくてもかまいません。入れないときは音のない動画になります。</p>
+<h3>曲の入れ方</h3>
+<p><strong>書き出し</strong>のステップで、「音楽」の横の <kbd>＋ 追加</kbd> を押して、曲のファイルを選びます。パソコンでは、曲のファイルを画面にドロップしても入れられます。</p>
+<ul>
+  <li><strong>使えるファイル</strong> — MP3・M4A（AAC）・WAV。多くのブラウザでは OGG や FLAC も使えます。</li>
+  <li><strong>iPhone / iPad</strong> — 曲は「ファイル」アプリから選びます。「ミュージック」アプリの曲（Apple Music や購入した曲）は保護されているため使えません。</li>
+</ul>
+<h3>曲の長さと動画の長さ</h3>
+<p>設定は何もいりません。次のように自動で合わせます。</p>
+<ul>
+  <li>曲は動画と同時に始まります。</li>
+  <li><strong>曲のほうが長いとき</strong> — 動画の終わりで止まります。最後の黒い時間のあいだに、ふわっと小さくなって消えていきます（フェードアウト）。</li>
+  <li><strong>曲のほうが短いとき</strong> — 1 回流れて終わり、そのあとは音なしになります。</li>
+</ul>
+<p>どちらになるかは、「音楽」の下の小さな一文で確認できます。動画を曲の長さに近づけたいときは、<strong>表示時間</strong>（1 枚あたりの秒数）を変えてください。</p>
+<p>別の曲にしたいときは、<kbd>× 外す</kbd> を押してから、新しい曲を追加します。</p>
+<div class="help-note caution"><strong>使ってよい曲を選んでください。</strong>ほとんどの曲には著作権があります。自分で録音した音や、著作権フリーの曲がいちばん安心です。SNS によっては、著作権のある曲が入った動画の音を消したり、動画を削除したりすることがあります。</div>
+<p>iPhone / iPad では、プレビューの最後でフェードアウトしませんが、できあがった動画ではフェードアウトします。</p>`,
   },
   browsers: {
     title: '対応ブラウザ・オフライン・プライバシー',

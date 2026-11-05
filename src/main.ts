@@ -4,10 +4,11 @@ import { HELP_ORDER, helpEntry, type HelpTopic } from './help';
 import { getLang, setLang, t, type Key, type Lang } from './i18n';
 import { icons } from './icons';
 import { History } from './history';
+import { audioFiles, loadMusic, musicGain, pickAudioCodec } from './music';
 import { imageFiles, loadPhotos } from './photos';
 import { initReorder } from './reorder';
 import { FrameCache, buildTimeline, drawFrame, frameAt, photosNeeded, type Timeline } from './timeline';
-import { DEFAULT_SETTINGS, LIMITS, OUTPUT_SIZE, type Aspect, type Format, type Photo, type Settings } from './types';
+import { DEFAULT_SETTINGS, LIMITS, OUTPUT_SIZE, type Aspect, type Format, type Music, type Photo, type Settings } from './types';
 
 // ───────────────────────────── State ─────────────────────────────
 
@@ -44,11 +45,16 @@ interface Notice {
 const state = {
   step: 0,
   photos: [] as Photo[],
+  /** The one optional song. */
+  music: null as Music | null,
+  musicLoading: false,
   settings: loadSettings(),
   loading: null as { done: number; total: number } | null,
   notice: null as Notice | null,
   /** Encoder support per `${format}@${aspect}`: undefined = still checking. */
   support: {} as Record<string, boolean | undefined>,
+  /** Whether sound can be added to each format: undefined = still checking. */
+  audioSupport: {} as Partial<Record<Format, boolean>>,
   exp: { phase: 'idle' } as ExportState,
   /** Two-click confirmation for destructive buttons. */
   confirm: null as string | null,
@@ -91,6 +97,7 @@ function fmtBytes(n: number): string {
 
 interface Snapshot {
   photos: Photo[];
+  music: Music | null;
   settings: Settings;
 }
 
@@ -111,7 +118,7 @@ const SETTING_LABEL: Record<keyof Settings, Key> = {
 };
 
 function snapshot(): Snapshot {
-  return { photos: [...state.photos], settings: { ...state.settings } };
+  return { photos: [...state.photos], music: state.music, settings: { ...state.settings } };
 }
 
 /** Save the current state as an undo step. Call before changing photos. */
@@ -120,7 +127,7 @@ function record(label: Key, mergeKey?: string): void {
 }
 
 function canEditHistory(): boolean {
-  return state.exp.phase !== 'running' && !state.loading;
+  return state.exp.phase !== 'running' && !state.loading && !state.musicLoading;
 }
 
 function applyHistory(dir: 'undo' | 'redo'): void {
@@ -131,6 +138,7 @@ function applyHistory(dir: 'undo' | 'redo'): void {
     return render();
   }
   state.photos = [...entry.snap.photos];
+  state.music = entry.snap.music;
   state.settings = { ...entry.snap.settings };
   saveSettings();
   state.exp = { phase: 'idle' };
@@ -219,6 +227,14 @@ function checkSupport(): void {
       state.support[key] = codec !== null;
       const id = STEPS[state.step].id;
       if ((id === 'format' || id === 'export') && state.exp.phase !== 'running') render();
+    });
+  }
+  const { format } = state.settings;
+  if (state.music && !(format in state.audioSupport)) {
+    state.audioSupport[format] = undefined;
+    pickAudioCodec(format).then((codec) => {
+      state.audioSupport[format] = codec !== null;
+      if (STEPS[state.step].id === 'export' && state.exp.phase !== 'running') render();
     });
   }
 }
@@ -553,11 +569,36 @@ function renderBlack(): string {
 }
 
 // Step 7 — Export
+/** The Music line of the export summary: one optional song, no settings. */
+function musicRow(busy: boolean): string {
+  const m = state.music;
+  const dis = busy || state.musicLoading ? 'disabled' : '';
+  if (state.musicLoading) {
+    return `<div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="none"><span class="spinner"></span>${t('musicReading')}</dd><span></span></div>`;
+  }
+  if (!m) {
+    return `
+      <div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="none">${t('musicNone')}</dd>
+        <button class="link" data-action="add-music" data-focus="add-music" aria-label="${t('addMusicLabel')}" ${dis}>${icons.plus}${t('addMusic')}</button></div>`;
+  }
+  const total = totalLength();
+  const note = m.duration > total
+    ? t('musicFadesOut', { len: fmtLength(Math.round(m.duration)), end: fmtLength(total) })
+    : t('musicEndsEarly', { len: fmtLength(Math.round(m.duration)) });
+  return `
+    <div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="song" title="${esc(m.name)}">${esc(m.name)}</dd>
+      <button class="link" data-action="remove-music" data-focus="remove-music" aria-label="${t('removeMusicLabel')}" ${dis}>${icons.x}${t('removeMusic')}</button>
+      <p class="music-note">${note}</p></div>`;
+}
+
 function renderExport(): string {
   checkSupport();
   const s = state.settings;
   const { w, h } = OUTPUT_SIZE[s.aspect];
-  const supported = state.support[supportKey(s.format)];
+  const videoOk = state.support[supportKey(s.format)];
+  const audioOk = state.music ? state.audioSupport[s.format] : true;
+  // false = can't make it; undefined = still checking.
+  const supported = videoOk === false || audioOk === false ? false : videoOk === undefined || audioOk === undefined ? undefined : true;
   const ex = state.exp;
   const row = (label: Key, value: string, step: number) => `
     <div class="sum-row"><dt>${t(label)}</dt><dd>${esc(value)}</dd>
@@ -619,7 +660,8 @@ function renderExport(): string {
           : '';
     action = `
       ${msg}
-      ${supported === false ? `<div class="notice error" role="alert">${icons.alert}<div><p>${t('notSupported')}</p><p><button class="link" data-action="goto" data-step="2">${t('stepFormat')} ›</button></p></div></div>` : ''}
+      ${videoOk === false ? `<div class="notice error" role="alert">${icons.alert}<div><p>${t('notSupported')}</p><p><button class="link" data-action="goto" data-step="2">${t('stepFormat')} ›</button></p></div></div>` : ''}
+      ${videoOk !== false && audioOk === false ? `<div class="notice error" role="alert">${icons.alert}<div><p>${t('musicNotSupported', { format: FORMAT_LABEL[s.format] })}</p><p class="muted">${t('musicNotSupportedHint')}</p><p><button class="link" data-action="goto" data-step="2">${t('stepFormat')} ›</button></p></div></div>` : ''}
       <button class="primary huge" data-action="export" data-focus="export" ${supported === false || supported === undefined ? 'disabled' : ''}>
         ${mode === 'picker' ? icons.save : mode === 'share' ? icons.film : icons.download}<span>${t(mode === 'picker' ? 'saveAndCreate' : mode === 'share' ? 'createVideo' : 'createAndDownload')}</span>
       </button>
@@ -650,6 +692,7 @@ function renderExport(): string {
           ${row('sumDuration', t('secondsShort', { n: fmtSec(s.duration) }), 3)}
           ${row('sumTransition', s.transition === 'fade' ? `${t('fade')} · ${t('secondsShort', { n: fmtSec(s.fadeDuration) })}` : t('cut'), 4)}
           ${row('sumBlack', `${t('secondsShort', { n: fmtSec(s.leadIn) })} / ${t('secondsShort', { n: fmtSec(s.leadOut) })}`, 5)}
+          ${musicRow(ex.phase === 'running')}
           <div class="sum-row total-row"><dt>${t('sumLength')}</dt><dd>${fmtLength(totalLength())}</dd><span></span></div>
           <div class="sum-row"><dt>${t('sumSize')}</dt><dd>${w} × ${h}</dd><span></span></div>
         </dl>
@@ -709,6 +752,8 @@ class Player {
   private alive = true;
   /** Before the first play/seek, show the first photo instead of the black lead-in. */
   private poster: boolean;
+  /** The song, played along with the preview. */
+  private audio: HTMLAudioElement | null = null;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -729,7 +774,24 @@ class Player {
     this.cache = new FrameCache(state.photos, this.w, this.h, state.settings.fit, 8);
     this.t = clamp(t, 0, this.tl.total);
     this.poster = this.t === 0;
+    if (state.music) {
+      this.audio = new Audio(state.music.url);
+      this.audio.preload = 'auto';
+    }
     this.draw();
+  }
+
+  /** Start the song at the current time (it stays silent once the song has ended). */
+  private startAudio(): void {
+    const a = this.audio;
+    if (!a || !state.music) return;
+    if (this.t >= state.music.duration) {
+      a.pause();
+      return;
+    }
+    a.currentTime = this.t;
+    a.volume = musicGain(this.t, this.tl.total, state.settings.leadOut);
+    void a.play().catch(() => {});
   }
 
   /** First moment where photo 1 is fully visible. */
@@ -749,6 +811,7 @@ class Player {
     this.poster = false;
     this.playing = true;
     this.last = performance.now();
+    this.startAudio();
     this.updateButton();
     this.raf = requestAnimationFrame(this.tick);
   }
@@ -756,18 +819,25 @@ class Player {
   pause(): void {
     this.playing = false;
     cancelAnimationFrame(this.raf);
+    this.audio?.pause();
     this.updateButton();
   }
 
   seekTo(fraction: number): void {
     this.t = fraction * this.tl.total;
     this.poster = false;
+    if (this.playing) this.startAudio();
     this.draw();
   }
 
   destroy(): void {
     this.alive = false;
     this.pause();
+    if (this.audio) {
+      this.audio.removeAttribute('src');
+      this.audio.load();
+      this.audio = null;
+    }
     previewTime = this.t;
   }
 
@@ -780,6 +850,13 @@ class Player {
       this.draw();
       this.pause();
       return;
+    }
+    const a = this.audio;
+    if (a && !a.paused) {
+      // Fade-out at the end. (iPhone ignores volume, so there the preview doesn't fade; the video does.)
+      a.volume = musicGain(this.t, this.tl.total, state.settings.leadOut);
+      // Keep the song in step with the pictures.
+      if (Math.abs(a.currentTime - this.t) > 0.25 && this.t < (state.music?.duration ?? 0)) a.currentTime = this.t;
     }
     this.draw();
     this.raf = requestAnimationFrame(this.tick);
@@ -864,29 +941,67 @@ async function addFiles(list: FileList | File[]): Promise<void> {
   render();
 }
 
-// One file input that lives in the page for good. iOS Safari can throw away an input that isn't
-// in the document while its photo picker is open, and then the chosen photos never arrive.
-// It sits outside #app so re-renders don't replace it.
-let fileInput: HTMLInputElement | null = null;
+// File inputs that live in the page for good. iOS Safari can throw away an input that isn't
+// in the document while its picker is open, and then the chosen files never arrive.
+// They sit outside #app so re-renders don't replace them.
+const fileInputs = new Map<string, HTMLInputElement>();
+
+function pickFiles(accept: string, multiple: boolean, onPick: (files: File[]) => void): void {
+  const key = `${accept}|${multiple}`;
+  let input = fileInputs.get(key);
+  if (!input) {
+    const el = document.createElement('input');
+    el.type = 'file';
+    el.accept = accept;
+    el.multiple = multiple;
+    el.className = 'file-input';
+    el.tabIndex = -1;
+    el.setAttribute('aria-hidden', 'true');
+    document.body.append(el);
+    fileInputs.set(key, el);
+    input = el;
+  }
+  const el = input;
+  el.onchange = () => {
+    const files = el.files ? Array.from(el.files) : [];
+    el.value = ''; // so choosing the same files again still fires `change`
+    if (files.length) onPick(files);
+  };
+  el.click();
+}
 
 function choosePhotos(): void {
-  if (!fileInput) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,.heic,.heif';
-    input.multiple = true;
-    input.className = 'file-input';
-    input.tabIndex = -1;
-    input.setAttribute('aria-hidden', 'true');
-    input.addEventListener('change', () => {
-      const files = input.files ? Array.from(input.files) : [];
-      input.value = ''; // so choosing the same photos again still fires `change`
-      if (files.length) void addFiles(files);
-    });
-    document.body.append(input);
-    fileInput = input;
+  pickFiles('image/*,.heic,.heif', true, (files) => void addFiles(files));
+}
+
+function chooseMusic(): void {
+  pickFiles('audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac,.aif,.aiff', false, (files) => void addMusic(files[0]));
+}
+
+async function addMusic(file: File): Promise<void> {
+  state.musicLoading = true;
+  state.notice = null;
+  render();
+  try {
+    const music = await loadMusic(file);
+    record('actAddMusic');
+    state.music = music;
+    if (STEPS[state.step].id !== 'export') state.notice = { kind: 'info', text: t('musicAdded', { name: music.name }) };
+  } catch (e) {
+    console.warn('Could not read song', e);
+    state.notice = { kind: 'error', text: t('musicUnreadable', { name: file.name }), hint: t('musicUnreadableHint') };
+  } finally {
+    state.musicLoading = false;
   }
-  fileInput.click();
+  previewTime = 0;
+  render();
+}
+
+function removeMusic(): void {
+  if (!state.music) return;
+  record('actRemoveMusic');
+  state.music = null;
+  render();
 }
 
 function movePhoto(id: number, toIndex: number): void {
@@ -927,6 +1042,7 @@ async function startExport(): Promise<void> {
     const blob = await exportVideo({
       photos: [...state.photos],
       settings: { ...s },
+      music: state.music?.file ?? null,
       handle,
       isCancelled: () => cancelRequested,
       onProgress: (f) => {
@@ -1000,6 +1116,7 @@ function startOver(): void {
   record('actStartOver');
   lastVideo = null;
   state.photos = [];
+  state.music = null;
   state.notice = { kind: 'info', text: t('clearedAll'), undo: true };
   state.exp = { phase: 'idle' };
   state.confirm = null;
@@ -1063,6 +1180,10 @@ document.addEventListener('click', (e) => {
       return render();
     case 'choose':
       return choosePhotos();
+    case 'add-music':
+      return chooseMusic();
+    case 'remove-music':
+      return removeMusic();
     case 'undo':
       return applyHistory('undo');
     case 'redo':
@@ -1192,7 +1313,13 @@ window.addEventListener('dragleave', (e) => {
 window.addEventListener('drop', (e) => {
   e.preventDefault();
   document.body.classList.remove('dropping');
-  if (hasFiles(e) && state.exp.phase !== 'running' && e.dataTransfer?.files.length) void addFiles(e.dataTransfer.files);
+  if (!hasFiles(e) || state.exp.phase === 'running' || !e.dataTransfer?.files.length) return;
+  // A dropped song becomes the music; everything else goes to the photos.
+  const all = Array.from(e.dataTransfer.files);
+  const songs = audioFiles(all);
+  const rest = all.filter((f) => !songs.includes(f));
+  if (songs.length) void addMusic(songs[0]);
+  if (rest.length) void addFiles(rest);
 });
 
 // Reordering thumbnails (mouse drag, or long-press then drag on touch screens).

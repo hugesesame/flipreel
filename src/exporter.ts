@@ -1,6 +1,8 @@
 // Video encoding with WebCodecs via Mediabunny. Everything runs locally in the browser.
 
 import {
+  AudioSample,
+  AudioSampleSource,
   BufferTarget,
   CanvasSource,
   Mp4OutputFormat,
@@ -12,6 +14,7 @@ import {
   type StreamTargetChunk,
   type VideoCodec,
 } from 'mediabunny';
+import { AUDIO_CHANNELS, AUDIO_RATE, decodeSong, musicGain, pickAudioCodec } from './music';
 import { FPS, FrameCache, buildTimeline, drawFrame, frameAt, photosNeeded } from './timeline';
 import { OUTPUT_SIZE, type Format, type Photo, type Settings } from './types';
 
@@ -68,17 +71,66 @@ export interface ExportJob {
   settings: Settings;
   /** Write straight to this file. If omitted, the video is built in memory and returned as a Blob. */
   handle?: FileSystemFileHandle;
+  /** Optional song, fitted to the video length. */
+  music?: File | null;
   onProgress: (fraction: number) => void;
   isCancelled: () => boolean;
 }
 
 export class CancelledError extends Error {}
+/** The browser can't encode sound for this format. */
+export class AudioUnsupportedError extends Error {}
+
+/**
+ * Feeds the song to the encoder in one-second pieces, so that sound and pictures stay interleaved.
+ * The song is cut at the end of the video and fades out; after a shorter song, the rest is silence.
+ */
+class SongFeeder {
+  private pos = 0; // in sample frames
+  private readonly end: number;
+  private readonly channels: Float32Array[];
+
+  constructor(
+    private source: AudioSampleSource,
+    song: AudioBuffer,
+    private total: number,
+    private leadOut: number,
+  ) {
+    this.end = Math.round(total * AUDIO_RATE);
+    this.channels = Array.from({ length: AUDIO_CHANNELS }, (_, c) => song.getChannelData(Math.min(c, song.numberOfChannels - 1)));
+  }
+
+  /** Adds sound up to `untilSec` (clamped to the video length). */
+  async fillTo(untilSec: number): Promise<void> {
+    const until = Math.min(this.end, Math.round(untilSec * AUDIO_RATE));
+    while (this.pos < until) {
+      const n = Math.min(AUDIO_RATE, until - this.pos);
+      const data = new Float32Array(n * AUDIO_CHANNELS); // planar: all of channel 0, then channel 1
+      for (let c = 0; c < AUDIO_CHANNELS; c++) {
+        const src = this.channels[c];
+        const out = data.subarray(c * n, (c + 1) * n);
+        for (let i = 0; i < n; i++) {
+          const k = this.pos + i;
+          out[i] = k < src.length ? src[k] * musicGain(k / AUDIO_RATE, this.total, this.leadOut) : 0;
+        }
+      }
+      const sample = new AudioSample({ data, format: 'f32-planar', numberOfChannels: AUDIO_CHANNELS, sampleRate: AUDIO_RATE, timestamp: this.pos / AUDIO_RATE });
+      await this.source.add(sample);
+      sample.close();
+      this.pos += n;
+    }
+  }
+}
 
 export async function exportVideo(job: ExportJob): Promise<Blob | null> {
   const { photos, settings, handle } = job;
   const { w, h } = OUTPUT_SIZE[settings.aspect];
   const codec = await pickCodec(settings.format, w, h);
   if (!codec) throw new Error(`No encoder for ${settings.format} at ${w}x${h}`);
+  const audioCodec = job.music ? await pickAudioCodec(settings.format) : null;
+  if (job.music && !audioCodec) throw new AudioUnsupportedError(`No audio encoder for ${settings.format}`);
+  // The song was already read once when it was added, so decoding it again here is expected to work.
+  let song: AudioBuffer | null = job.music ? await decodeSong(job.music) : null;
 
   const format = settings.format === 'mp4' ? new Mp4OutputFormat() : new WebMOutputFormat();
   const writable = handle ? await handle.createWritable() : null;
@@ -95,6 +147,13 @@ export async function exportVideo(job: ExportJob): Promise<Blob | null> {
   output.addVideoTrack(source, { frameRate: FPS });
 
   const tl = buildTimeline(photos.length, settings);
+  let feeder: SongFeeder | null = null;
+  if (song && audioCodec) {
+    const audioSource = new AudioSampleSource({ codec: audioCodec, quality: QUALITY_HIGH });
+    output.addAudioTrack(audioSource);
+    feeder = new SongFeeder(audioSource, song, tl.total, settings.leadOut);
+    song = null; // the feeder holds what it needs
+  }
   const cache = new FrameCache(photos, w, h, settings.fit, 3);
   const frameCount = Math.max(1, Math.round(tl.total * FPS));
   const dt = 1 / FPS;
@@ -105,6 +164,8 @@ export async function exportVideo(job: ExportJob): Promise<Blob | null> {
     for (let i = 0; i < frameCount; i++) {
       if (job.isCancelled()) throw new CancelledError();
       const t = i * dt;
+      // Keep the sound about a second ahead of the pictures.
+      if (feeder) await feeder.fillTo(t + 1);
       // Sample the middle of each frame so fades are symmetric.
       const ts = t + dt / 2;
       await Promise.all(photosNeeded(tl, ts).map((p) => cache.ensure(p)));
@@ -115,6 +176,7 @@ export async function exportVideo(job: ExportJob): Promise<Blob | null> {
       await source.add(t, dt);
       if (i % 5 === 0) job.onProgress(i / frameCount);
     }
+    if (feeder) await feeder.fillTo(tl.total);
     await output.finalize();
     finished = true;
     job.onProgress(1);

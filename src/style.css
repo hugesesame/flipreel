@@ -1293,6 +1293,38 @@ body.reordering * {
   background: var(--surface-2);
 }
 
+/* Music: one optional song. The name can be long, so it gets the flexible column. */
+.sum-row.music-row {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.music-row dd.none {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.music-row dd.song {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-row .spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+
+.music-note {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: right;
+}
+
 .action-area {
   margin-top: 20px;
 }
@@ -1609,7 +1641,14 @@ dialog#help::backdrop {
   mask: var(--icon-lock) center / contain no-repeat;
 }
 
+/* A note that is a caution rather than about privacy. */
+.help-note.caution::before {
+  -webkit-mask-image: var(--icon-caution);
+  mask-image: var(--icon-caution);
+}
+
 :root {
+  --icon-caution: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7.5v5.5M12 16.5v.01'/%3E%3C/svg%3E");
   --icon-lock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E");
 }
 

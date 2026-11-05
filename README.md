@@ -24,6 +24,7 @@ Add photos, answer seven short questions, and save an MP4 or WebM video. Everyth
 - **Formats**: MP4 (H.264) or WebM (VP9), full HD (short side 1080 px), 30 fps
 - **Transitions**: Cut or Fade, with adjustable fade length
 - **Black** lead-in and lead-out
+- **Music (optional)**: add one song of your own (MP3, M4A, WAV…). It is fitted to the video automatically — cut at the end with a fade-out, or silent after a shorter song
 - **Preview** before export
 - **Undo / redo** (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) for photo and setting changes
 - **Choose where to save** (Chrome / Edge on a computer)
@@ -77,6 +78,7 @@ Every push to `main` builds the app and publishes it to GitHub Pages ([.github/w
 ## How it works
 
 - Photos are decoded with `createImageBitmap` and drawn onto a canvas, one frame at a time.
+- An optional song is decoded with the Web Audio API and encoded as AAC (MP4) or Opus (WebM) alongside the frames.
 - Frames are encoded with the browser's [WebCodecs](https://developer.mozilla.org/docs/Web/API/WebCodecs_API) API and packaged into MP4/WebM with [Mediabunny](https://mediabunny.dev/).
 - In Chrome/Edge on a computer, the video is streamed straight to the file you picked with the [File System Access API](https://developer.mozilla.org/docs/Web/API/Window/showSaveFilePicker). Phones hand the finished video to the [share sheet](https://developer.mozilla.org/docs/Web/API/Navigator/share); other browsers download it.
 - [Vite](https://vite.dev/) and [vite-plugin-singlefile](https://github.com/richardtallent/vite-plugin-singlefile) inline all JavaScript and CSS into one HTML file, so no network access is needed.

@@ -24,6 +24,7 @@
 - **ファイル形式**：MP4（H.264）か WebM（VP9）。フル HD（短い辺 1080 px）、30 fps
 - **トランジション**：カットかフェード。フェードの長さも変えられます
 - 最初と最後の**黒み**
+- **音楽（なくても OK）**：手持ちの曲（MP3・M4A・WAV など）を 1 曲入れられます。長さは自動で合わせます（長い曲は動画の終わりでフェードアウト、短い曲は終わった後は無音）
 - 書き出す前の**プレビュー**
 - 写真や設定の変更を**取り消し / やり直し**（⌘Z / Ctrl+Z、⇧⌘Z / Ctrl+Y）
 - **保存先を選べる**（パソコンの Chrome / Edge）
@@ -77,6 +78,7 @@ npm run typecheck
 ## しくみ
 
 - 写真を `createImageBitmap` で読み込み、1 コマずつ canvas に描きます。
+- 曲を入れた場合は Web Audio API で読み込み、映像と一緒に AAC（MP4）か Opus（WebM）で書き出します。
 - 描いたコマをブラウザの [WebCodecs](https://developer.mozilla.org/ja/docs/Web/API/WebCodecs_API) で動画に変換し、[Mediabunny](https://mediabunny.dev/) で MP4 / WebM ファイルにまとめます。
 - パソコンの Chrome / Edge では、[File System Access API](https://developer.mozilla.org/ja/docs/Web/API/Window/showSaveFilePicker) で選んだファイルへ直接書き込みます。スマホでは完成した動画を[共有シート](https://developer.mozilla.org/ja/docs/Web/API/Navigator/share)に渡し、そのほかのブラウザではダウンロードします。
 - [Vite](https://vite.dev/) と [vite-plugin-singlefile](https://github.com/richardtallent/vite-plugin-singlefile) で JavaScript と CSS をすべて 1 つの HTML に埋め込んでいるため、ネットワークへの接続は不要です。
