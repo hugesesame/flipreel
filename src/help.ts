@@ -52,6 +52,9 @@ const en: Record<HelpTopic, Entry> = {
   <li><strong>Export</strong> — watch a preview, then save the video.</li>
 </ol>
 <p>You can go back to any step at any time with <kbd>Back</kbd> or by clicking the step names at the top. Nothing is lost.</p>
+<h3>Made a mistake? Undo it</h3>
+<p>Press <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Z</kbd> (Windows) to undo the last change — removing a photo, changing the order, or changing a setting. You can undo again and again.</p>
+<p>To redo what you undid, press <kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Y</kbd> (Windows). The ↶ ↷ buttons at the top right do the same.</p>
 <div class="help-note"><strong>Your photos stay on your computer.</strong> Flipbook works completely offline. Nothing is uploaded anywhere.</div>`,
   },
   photos: {
@@ -69,7 +72,7 @@ const en: Record<HelpTopic, Entry> = {
   <li>use the <kbd>‹</kbd> <kbd>›</kbd> arrows on each photo to move it one place earlier or later.</li>
   <li><strong>Sort by name</strong> puts them in file-name order — handy for camera photos named like <code>IMG_0001</code>, <code>IMG_0002</code>…</li>
 </ul>
-<p>Press <kbd>×</kbd> on a photo to take it out. This doesn't delete the file on your computer.</p>
+<p>Press <kbd>×</kbd> on a photo to take it out. This doesn't delete the file on your computer. Removed one by mistake? Press <kbd>Undo</kbd> in the message that appears, or <kbd>⌘Z</kbd> / <kbd>Ctrl+Z</kbd>.</p>
 <h3>Which files work?</h3>
 <p>JPEG, PNG, WebP, GIF (first frame only) and AVIF work in all supported browsers. <strong>HEIC</strong> (iPhone photos) works in Safari only. In other browsers, convert them to JPEG first — on a Mac, open them in Preview and choose <em>File › Export › JPEG</em>. On iPhone, <em>Settings › Camera › Formats › Most Compatible</em> saves new photos as JPEG.</p>`,
   },
@@ -193,6 +196,9 @@ const ja: Record<HelpTopic, Entry> = {
   <li><strong>書き出し</strong> — プレビューを見て、動画を保存します。</li>
 </ol>
 <p><kbd>戻る</kbd> ボタンや、画面上部のステップ名を押せば、いつでも前のステップに戻れます。設定が消えることはありません。</p>
+<h3>まちがえたときは「取り消し」</h3>
+<p><kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Z</kbd>（Windows）を押すと、直前の操作を取り消して元に戻せます。写真の削除や並べ替え、設定の変更など、何回でもさかのぼれます。</p>
+<p>取り消した操作をもう一度やり直したいときは、<kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Y</kbd>（Windows）を押します。画面右上の ↶ ↷ ボタンでも同じことができます。</p>
 <div class="help-note"><strong>写真はお使いのパソコンの中だけで扱われます。</strong>Flipbook はインターネットにつながっていなくても動き、写真がどこかに送られることはありません。</div>`,
   },
   photos: {
@@ -210,7 +216,7 @@ const ja: Record<HelpTopic, Entry> = {
   <li>写真の <kbd>‹</kbd> <kbd>›</kbd> ボタンで、1 つ前・1 つ後ろへ動かせます。</li>
   <li><strong>「名前順に並べる」</strong>を押すと、ファイル名の順に並びます。カメラの写真（<code>IMG_0001</code>、<code>IMG_0002</code>…）なら撮った順になることが多いです。</li>
 </ul>
-<p>写真の <kbd>×</kbd> を押すと、その写真を動画から外せます。パソコンの中の写真が消えることはありません。</p>
+<p>写真の <kbd>×</kbd> を押すと、その写真を動画から外せます。パソコンの中の写真が消えることはありません。まちがえて外したときは、表示されるメッセージの <kbd>取り消す</kbd> を押すか、<kbd>⌘Z</kbd> / <kbd>Ctrl+Z</kbd> で元に戻せます。</p>
 <h3>使えるファイル</h3>
 <p>JPEG・PNG・WebP・GIF（最初のコマだけ）・AVIF が使えます。iPhone の写真に多い <strong>HEIC</strong> は Safari でだけ使えます。ほかのブラウザでは、先に JPEG に変換してください。Mac なら「プレビュー」で開いて <em>ファイル › 書き出す › JPEG</em> で変換できます。iPhone の <em>設定 › カメラ › フォーマット › 互換性優先</em> にすると、これから撮る写真が JPEG で保存されます。</p>`,
   },

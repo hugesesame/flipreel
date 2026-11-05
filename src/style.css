@@ -220,6 +220,22 @@ button:disabled {
   padding: 8px;
 }
 
+.ghost:disabled {
+  opacity: 0.3;
+}
+
+.ghost:disabled:hover {
+  background: none;
+  color: var(--muted);
+}
+
+.top-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 6px 4px;
+  background: var(--border-strong);
+}
+
 .icon-btn {
   width: 32px;
   height: 32px;

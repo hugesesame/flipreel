@@ -16,6 +16,7 @@ Flipbook is a single HTML file. Open it, add your photos, answer seven short que
 - **Formats**: MP4 (H.264) or WebM (VP9), full HD (short side 1080 px), 30 fps
 - **Transitions**: Cut or Fade, with adjustable fade length
 - **Black** lead-in and lead-out
+- **Undo / redo** (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) for photo and setting changes
 - **Preview** before export
 - **Choose where to save** (Chrome / Edge)
 - **Built-in Help** that explains every step in plain language
@@ -75,6 +76,7 @@ src/exporter.ts    Encoding and saving
 src/photos.ts      Loading photos and thumbnails
 src/i18n.ts        UI strings (English / Japanese)
 src/help.ts        Help content (English / Japanese)
+src/history.ts     Undo / redo history
 src/style.css      Styles, light and dark themes
 ```
 

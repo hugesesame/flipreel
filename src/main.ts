@@ -3,7 +3,8 @@ import { CancelledError, askSaveLocation, canChooseSaveLocation, downloadBlob, e
 import { HELP_ORDER, helpEntry, type HelpTopic } from './help';
 import { getLang, setLang, t, type Key, type Lang } from './i18n';
 import { icons } from './icons';
-import { imageFiles, loadPhotos, releasePhoto } from './photos';
+import { History } from './history';
+import { imageFiles, loadPhotos } from './photos';
 import { FrameCache, buildTimeline, drawFrame, frameAt, photosNeeded, type Timeline } from './timeline';
 import { DEFAULT_SETTINGS, LIMITS, OUTPUT_SIZE, type Aspect, type Format, type Photo, type Settings } from './types';
 
@@ -32,6 +33,8 @@ interface Notice {
   kind: 'info' | 'error';
   text: string;
   hint?: string;
+  /** Show an Undo button (after removing photos). */
+  undo?: boolean;
 }
 
 const state = {
@@ -52,6 +55,61 @@ let cancelRequested = false;
 let player: Player | null = null;
 let previewTime = 0;
 let dragId: number | null = null;
+
+// ───────────────────────────── Undo / redo ─────────────────────────────
+
+interface Snapshot {
+  photos: Photo[];
+  settings: Settings;
+}
+
+const history = new History<Snapshot, Key>();
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+const UNDO_KEYS = isMac ? '⌘Z' : 'Ctrl+Z';
+const REDO_KEYS = isMac ? '⇧⌘Z' : 'Ctrl+Y';
+
+const SETTING_LABEL: Record<keyof Settings, Key> = {
+  aspect: 'stepAspect',
+  fit: 'fitLabel',
+  format: 'stepFormat',
+  duration: 'stepDuration',
+  transition: 'stepTransition',
+  fadeDuration: 'fadeDuration',
+  leadIn: 'stepBlack',
+  leadOut: 'stepBlack',
+};
+
+function snapshot(): Snapshot {
+  return { photos: [...state.photos], settings: { ...state.settings } };
+}
+
+/** Save the current state as an undo step. Call before changing photos. */
+function record(label: Key, mergeKey?: string): void {
+  history.record(snapshot(), label, state.step, mergeKey);
+}
+
+function canEditHistory(): boolean {
+  return state.exp.phase !== 'running' && !state.loading;
+}
+
+function applyHistory(dir: 'undo' | 'redo'): void {
+  if (!canEditHistory()) return;
+  const entry = dir === 'undo' ? history.undo(snapshot()) : history.redo(snapshot());
+  if (!entry) {
+    state.notice = { kind: 'info', text: t(dir === 'undo' ? 'nothingToUndo' : 'nothingToRedo') };
+    return render();
+  }
+  state.photos = [...entry.snap.photos];
+  state.settings = { ...entry.snap.settings };
+  saveSettings();
+  state.exp = { phase: 'idle' };
+  state.confirm = null;
+  previewTime = 0;
+  // Show the step where the change was made, so the user can see what changed.
+  state.step = stepReachable(entry.step) ? entry.step : 0;
+  state.notice = { kind: 'info', text: t(dir === 'undo' ? 'undone' : 'redone', { what: t(entry.label) }) };
+  render();
+}
 
 // ───────────────────────────── Persistence ─────────────────────────────
 
@@ -134,10 +192,17 @@ function checkSupport(): void {
   }
 }
 
-function update(patch: Partial<Settings>): void {
+/** Change settings (undoable). `mergeKey` merges rapid repeated changes into one undo step. */
+function update(patch: Partial<Settings>, mergeKey?: string): void {
+  const before = snapshot();
   Object.assign(state.settings, patch);
   state.settings.fadeDuration = clamp(state.settings.fadeDuration, LIMITS.fade.min, fadeMax());
-  saveSettings();
+  if (JSON.stringify(state.settings) !== JSON.stringify(before.settings)) {
+    const field = Object.keys(patch)[0] as keyof Settings;
+    history.record(before, SETTING_LABEL[field], state.step, mergeKey);
+    saveSettings();
+    if (state.notice?.kind === 'info') state.notice = null;
+  }
   render();
 }
 
@@ -181,6 +246,9 @@ function renderHeader(): string {
   <header class="topbar">
     <div class="brand">${icons.logo}<div><span class="brand-name">Flipbook</span><span class="brand-tag">${t('appTagline')}</span></div></div>
     <nav class="top-actions">
+      <button class="ghost icon-only" data-action="undo" data-focus="undo" ${history.canUndo && canEditHistory() ? '' : 'disabled'} aria-label="${t('undo')} (${UNDO_KEYS})" title="${t('undo')} (${UNDO_KEYS})">${icons.undo}</button>
+      <button class="ghost icon-only" data-action="redo" data-focus="redo" ${history.canRedo && canEditHistory() ? '' : 'disabled'} aria-label="${t('redo')} (${REDO_KEYS})" title="${t('redo')} (${REDO_KEYS})">${icons.redo}</button>
+      <span class="top-sep" aria-hidden="true"></span>
       <button class="ghost" data-action="help" data-topic="start" data-focus="help-top">${icons.help}<span>${t('help')}</span></button>
       <button class="ghost" data-action="lang" data-focus="lang" aria-label="${t('langSwitchLabel')}" lang="${getLang() === 'en' ? 'ja' : 'en'}">${icons.globe}<span>${t('langSwitch')}</span></button>
       <button class="ghost icon-only" data-action="theme" data-focus="theme" aria-label="${dark ? t('themeToLight') : t('themeToDark')}" title="${dark ? t('themeToLight') : t('themeToDark')}">${dark ? icons.sun : icons.moon}</button>
@@ -213,7 +281,7 @@ function renderNotice(): string {
   if (!n) return '';
   return `<div class="notice ${n.kind}" role="${n.kind === 'error' ? 'alert' : 'status'}">
     ${n.kind === 'error' ? icons.alert : icons.check}
-    <div><p>${esc(n.text)}</p>${n.hint ? `<p class="muted">${esc(n.hint)} <button class="link" data-action="help" data-topic="photos">${t('help')}</button></p>` : ''}</div>
+    <div><p>${esc(n.text)}${n.undo ? ` <button class="link" data-action="undo">${t('undo')}</button>` : ''}</p>${n.hint ? `<p class="muted">${esc(n.hint)} <button class="link" data-action="help" data-topic="photos">${t('help')}</button></p>` : ''}</div>
     <button class="icon-btn" data-action="dismiss" aria-label="${t('close')}">${icons.x}</button>
   </div>`;
 }
@@ -722,6 +790,7 @@ async function addFiles(list: FileList | File[]): Promise<void> {
     if (el) el.innerHTML = `<span class="spinner"></span>${t('loadingPhotos', state.loading)}`;
   });
   state.loading = null;
+  if (photos.length) record('actAdd');
   state.photos.push(...photos);
   const bad = [...skipped, ...failed];
   if (bad.length) {
@@ -746,6 +815,7 @@ function choosePhotos(): void {
 function movePhoto(id: number, toIndex: number): void {
   const from = state.photos.findIndex((p) => p.id === id);
   if (from < 0) return;
+  record('actReorder');
   const [p] = state.photos.splice(from, 1);
   state.photos.splice(clamp(toIndex, 0, state.photos.length), 0, p);
   render();
@@ -802,8 +872,9 @@ async function startExport(): Promise<void> {
 }
 
 function startOver(): void {
-  state.photos.forEach(releasePhoto);
+  record('actStartOver');
   state.photos = [];
+  state.notice = { kind: 'info', text: t('clearedAll'), undo: true };
   state.exp = { phase: 'idle' };
   state.confirm = null;
   previewTime = 0;
@@ -866,20 +937,31 @@ document.addEventListener('click', (e) => {
       return render();
     case 'choose':
       return choosePhotos();
-    case 'sort':
-      state.photos.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    case 'undo':
+      return applyHistory('undo');
+    case 'redo':
+      return applyHistory('redo');
+    case 'sort': {
+      const sorted = [...state.photos].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+      if (sorted.every((p, i) => p === state.photos[i])) return;
+      record('actSort');
+      state.photos = sorted;
       return render();
+    }
     case 'remove-all':
       return confirmTwice('removeAll', () => {
-        state.photos.forEach(releasePhoto);
+        record('actRemoveAll');
         state.photos = [];
+        state.notice = { kind: 'info', text: t('removedAll'), undo: true };
         render();
       });
     case 'remove': {
       const id = Number(el.dataset.id);
       const p = state.photos.find((x) => x.id === id);
-      if (p) releasePhoto(p);
+      if (!p) return;
+      record('actRemove');
       state.photos = state.photos.filter((x) => x.id !== id);
+      state.notice = { kind: 'info', text: t('removedPhoto', { name: p.name }), undo: true };
       return render();
     }
     case 'move': {
@@ -904,7 +986,7 @@ document.addEventListener('click', (e) => {
       const { key, limit } = steppers[action];
       const max = action === 'fade' ? fadeMax() : limit.max;
       const v = round(clamp(state.settings[key] + Number(el.dataset.delta) * limit.step, limit.min, max), limit.step);
-      return update({ [key]: v });
+      return update({ [key]: v }, action);
     }
     case 'play':
       return player?.toggle();
@@ -921,6 +1003,16 @@ document.addEventListener('click', (e) => {
 
 document.addEventListener('keydown', (e) => {
   const el = e.target as HTMLElement;
+  // Undo: ⌘Z / Ctrl+Z. Redo: ⇧⌘Z / Ctrl+Shift+Z / Ctrl+Y.
+  const mod = isMac ? e.metaKey : e.ctrlKey;
+  const k = e.key.toLowerCase();
+  if (mod && !e.altKey && (k === 'z' || (k === 'y' && !isMac))) {
+    const typing = el.isContentEditable || el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && el.type !== 'range');
+    if (typing || $<HTMLDialogElement>('#help')?.open) return;
+    e.preventDefault();
+    applyHistory(k === 'y' || e.shiftKey ? 'redo' : 'undo');
+    return;
+  }
   if ((e.key === 'Enter' || e.key === ' ') && el.dataset.action === 'choose') {
     e.preventDefault();
     choosePhotos();
@@ -1010,6 +1102,8 @@ document.addEventListener('drop', (e) => {
   let idx = without.findIndex((p) => p.id === targetId);
   if (after) idx += 1;
   const from = state.photos.findIndex((p) => p.id === id);
+  if (from === idx) return render();
+  record('actReorder');
   const [p] = state.photos.splice(from, 1);
   state.photos.splice(idx, 0, p);
   render();
