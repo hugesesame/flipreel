@@ -179,13 +179,13 @@ const en: Record<HelpTopic, Entry> = {
   <li><strong>iPhone / iPad</strong> — songs are chosen from the <em>Files</em> app. Songs in the Music app (Apple Music or bought songs) are protected and can't be used.</li>
 </ul>
 <h3>How the song fits the video</h3>
-<p>There is nothing to set:</p>
+<p>There is nothing to set. Like the opening and closing of a film:</p>
 <ul>
-  <li>The song starts together with the video.</li>
-  <li><strong>Song longer than the video</strong> — it stops where the video ends, fading out gently over the black at the end.</li>
+  <li><strong>Start</strong> — the black at the start is silent. The song begins as the first photo appears, and fades in together with it.</li>
+  <li><strong>End</strong> — as the last photo starts to go dark, the song starts to fade out too. It fades for up to about 2 seconds and is gone by the end of the video.</li>
   <li><strong>Song shorter than the video</strong> — it plays once, and the rest of the video is silent.</li>
 </ul>
-<p>The small line under <em>Music</em> tells you which one applies. To make the video about as long as the song, change <strong>Duration</strong> (seconds per photo).</p>
+<p>The small line under <em>Music</em> tells you whether the song lasts until the end. To make the video about as long as the song, change <strong>Duration</strong> (seconds per photo).</p>
 <p>To use a different song, press <kbd>× Remove</kbd>, then add the new one.</p>
 <div class="help-note caution"><strong>Use music you're allowed to use.</strong> Most songs are protected by copyright. Your own recordings or royalty-free music are the safest. Some social networks mute or remove videos with copyrighted songs.</div>
 <p>On iPhone and iPad the preview doesn't fade out at the end, but the finished video does.</p>`,
@@ -354,13 +354,13 @@ const ja: Record<HelpTopic, Entry> = {
   <li><strong>iPhone / iPad</strong> — 曲は「ファイル」アプリから選びます。「ミュージック」アプリの曲（Apple Music や購入した曲）は保護されているため使えません。</li>
 </ul>
 <h3>曲の長さと動画の長さ</h3>
-<p>設定は何もいりません。次のように自動で合わせます。</p>
+<p>設定は何もいりません。映画の始まりと終わりのように、自動で合わせます。</p>
 <ul>
-  <li>曲は動画と同時に始まります。</li>
-  <li><strong>曲のほうが長いとき</strong> — 動画の終わりで止まります。最後の黒い時間のあいだに、ふわっと小さくなって消えていきます（フェードアウト）。</li>
+  <li><strong>始まり</strong> — 最初の黒い時間は音なしです。1 枚目の写真が見えはじめると同時に曲が始まり、写真と一緒にふわっと大きくなります。</li>
+  <li><strong>終わり</strong> — 最後の写真が暗くなりはじめると、曲も小さくなりはじめます（フェードアウト）。最大 2 秒ほどかけて、動画の終わりまでに消えていきます。</li>
   <li><strong>曲のほうが短いとき</strong> — 1 回流れて終わり、そのあとは音なしになります。</li>
 </ul>
-<p>どちらになるかは、「音楽」の下の小さな一文で確認できます。動画を曲の長さに近づけたいときは、<strong>表示時間</strong>（1 枚あたりの秒数）を変えてください。</p>
+<p>曲が最後まで続くかどうかは、「音楽」の下の小さな一文で確認できます。動画を曲の長さに近づけたいときは、<strong>表示時間</strong>（1 枚あたりの秒数）を変えてください。</p>
 <p>別の曲にしたいときは、<kbd>× 外す</kbd> を押してから、新しい曲を追加します。</p>
 <div class="help-note caution"><strong>使ってよい曲を選んでください。</strong>ほとんどの曲には著作権があります。自分で録音した音や、著作権フリーの曲がいちばん安心です。SNS によっては、著作権のある曲が入った動画の音を消したり、動画を削除したりすることがあります。</div>
 <p>iPhone / iPad では、プレビューの最後でフェードアウトしませんが、できあがった動画ではフェードアウトします。</p>`,

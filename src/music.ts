@@ -1,8 +1,10 @@
 // The optional song: reading it, and how it is fitted to the video.
-// No settings on purpose — the song starts with the video, is cut where the video ends
-// and fades out over the closing black. A shorter song just ends; the rest is silent.
+// No settings on purpose. The opening black is silent; the song starts as the first photo
+// appears (fading in with it), and starts fading out as the last photo goes dark, finishing
+// in the closing black. A shorter song just ends; the rest is silent.
 
 import { QUALITY_HIGH, canEncodeAudio, type AudioCodec } from 'mediabunny';
+import type { Timeline } from './timeline';
 import type { Format, Music } from './types';
 
 /** Songs are decoded and encoded at this rate (AAC and Opus both accept it). */
@@ -48,15 +50,58 @@ export async function pickAudioCodec(format: Format): Promise<AudioCodec | null>
   return null;
 }
 
-/** Seconds the song takes to fade out at the end of the video: the closing black, between 1 and 5 s. */
-export function fadeOutLength(total: number, leadOut: number): number {
-  return Math.min(total, Math.max(1, Math.min(5, leadOut)));
+/** Where the song sits in the video. All times are seconds of video time. */
+export interface SongPlan {
+  /** The song begins here (as the first photo starts to appear). */
+  start: number;
+  fadeIn: number;
+  /** The fade-out begins here (as the last photo starts to go dark)… */
+  fadeOutStart: number;
+  /** …and is silent from here on. */
+  fadeOutEnd: number;
 }
 
-/** Song volume (0–1) at time `t` of a video `total` seconds long. */
-export function musicGain(t: number, total: number, leadOut: number): number {
-  const fade = fadeOutLength(total, leadOut);
-  const start = total - fade;
-  if (t <= start) return 1;
-  return Math.max(0, (total - t) / fade);
+/** Preferred fade-out length: a fade as quick as the pictures' (0.5 s) sounds like the song was cut off. */
+const FADE_OUT = 2;
+/** If less than this is left after the last photo starts to go dark, fade out earlier instead. */
+const MIN_FADE_OUT = 1;
+/** With Cut there is no picture fade; ramp up just enough to avoid a click. */
+const CLICK_FREE = 0.05;
+
+export function songPlan(tl: Timeline): SongPlan {
+  const { segments: seg, halves, total } = tl;
+  const firstPhoto = seg.findIndex((s) => s.photo !== null);
+  let lastPhoto = -1;
+  for (let i = seg.length - 1; i >= 0; i--) if (seg[i].photo !== null) { lastPhoto = i; break; }
+  if (firstPhoto < 0) return { start: 0, fadeIn: CLICK_FREE, fadeOutStart: total, fadeOutEnd: total };
+
+  // Start: where the opening black begins to dissolve into the first photo.
+  const hIn = firstPhoto > 0 ? halves[firstPhoto - 1] : 0;
+  const start = seg[firstPhoto].start - hIn;
+  const fadeIn = Math.max(CLICK_FREE, 2 * hIn);
+
+  // End: the fade-out begins as the last photo begins to go dark, and takes about 2 s
+  // (longer if the picture fade is longer), but must be over by the end of the video.
+  const hOut = lastPhoto < seg.length - 1 ? halves[lastPhoto] : 0;
+  const darkens = seg[lastPhoto].end - hOut;
+  const wanted = Math.max(FADE_OUT, 2 * hOut);
+  if (total - darkens >= MIN_FADE_OUT) {
+    return { start, fadeIn, fadeOutStart: darkens, fadeOutEnd: Math.min(total, darkens + wanted) };
+  }
+  // Little or no closing black: fade out so it ends exactly with the video.
+  const fadeOutStart = Math.max(start, total - wanted);
+  return { start, fadeIn, fadeOutStart, fadeOutEnd: total };
+}
+
+/** Song volume (0–1) at video time `t`. */
+export function musicGain(t: number, p: SongPlan): number {
+  if (t < p.start || t >= p.fadeOutEnd) return 0;
+  const up = Math.min(1, (t - p.start) / p.fadeIn);
+  const down = t <= p.fadeOutStart ? 1 : (p.fadeOutEnd - t) / (p.fadeOutEnd - p.fadeOutStart);
+  return Math.max(0, Math.min(up, down));
+}
+
+/** Whether the song is still playing when the fade-out begins (otherwise it just ends early). */
+export function songReachesEnd(p: SongPlan, songDuration: number): boolean {
+  return p.start + songDuration > p.fadeOutStart;
 }

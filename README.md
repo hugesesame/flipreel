@@ -24,7 +24,7 @@ Add photos, answer seven short questions, and save an MP4 or WebM video. Everyth
 - **Formats**: MP4 (H.264) or WebM (VP9), full HD (short side 1080 px), 30 fps
 - **Transitions**: Cut or Fade, with adjustable fade length
 - **Black** lead-in and lead-out
-- **Music (optional)**: add one song of your own (MP3, M4A, WAV…). It is fitted to the video automatically — cut at the end with a fade-out, or silent after a shorter song
+- **Music (optional)**: add one song of your own (MP3, M4A, WAV…). It is fitted to the video automatically: silent opening black, in with the first photo, fading out as the last photo goes dark
 - **Preview** before export
 - **Undo / redo** (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) for photo and setting changes
 - **Choose where to save** (Chrome / Edge on a computer)

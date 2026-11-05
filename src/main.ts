@@ -4,7 +4,7 @@ import { HELP_ORDER, helpEntry, type HelpTopic } from './help';
 import { getLang, setLang, t, type Key, type Lang } from './i18n';
 import { icons } from './icons';
 import { History } from './history';
-import { audioFiles, loadMusic, musicGain, pickAudioCodec } from './music';
+import { audioFiles, loadMusic, musicGain, pickAudioCodec, songPlan, songReachesEnd, type SongPlan } from './music';
 import { imageFiles, loadPhotos } from './photos';
 import { initReorder } from './reorder';
 import { FrameCache, buildTimeline, drawFrame, frameAt, photosNeeded, type Timeline } from './timeline';
@@ -581,10 +581,10 @@ function musicRow(busy: boolean): string {
       <div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="none">${t('musicNone')}</dd>
         <button class="link" data-action="add-music" data-focus="add-music" aria-label="${t('addMusicLabel')}" ${dis}>${icons.plus}${t('addMusic')}</button></div>`;
   }
-  const total = totalLength();
-  const note = m.duration > total
-    ? t('musicFadesOut', { len: fmtLength(Math.round(m.duration)), end: fmtLength(total) })
-    : t('musicEndsEarly', { len: fmtLength(Math.round(m.duration)) });
+  const plan = songPlan(buildTimeline(state.photos.length, state.settings));
+  // Phrases don't break inside, so a narrow screen wraps between them, not mid-word.
+  const gap = getLang() === 'ja' ? '' : ' ';
+  const note = `${t('musicLen', { len: fmtLength(Math.round(m.duration)) })} · <span class="nowrap">${t('musicStarts')}</span>${gap}<span class="nowrap">${t(songReachesEnd(plan, m.duration) ? 'musicFadesOut' : 'musicEndsEarly')}</span>`;
   return `
     <div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="song" title="${esc(m.name)}">${esc(m.name)}</dd>
       <button class="link" data-action="remove-music" data-focus="remove-music" aria-label="${t('removeMusicLabel')}" ${dis}>${icons.x}${t('removeMusic')}</button>
@@ -754,6 +754,7 @@ class Player {
   private poster: boolean;
   /** The song, played along with the preview. */
   private audio: HTMLAudioElement | null = null;
+  private plan: SongPlan;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -774,6 +775,7 @@ class Player {
     this.cache = new FrameCache(state.photos, this.w, this.h, state.settings.fit, 8);
     this.t = clamp(t, 0, this.tl.total);
     this.poster = this.t === 0;
+    this.plan = songPlan(this.tl);
     if (state.music) {
       this.audio = new Audio(state.music.url);
       this.audio.preload = 'auto';
@@ -781,17 +783,46 @@ class Player {
     this.draw();
   }
 
-  /** Start the song at the current time (it stays silent once the song has ended). */
-  private startAudio(): void {
+  /**
+   * Make the song match the picture: silent in the opening black, playing (in step) from the
+   * first photo, silent again once the fade-out is over or the song has ended.
+   */
+  private syncAudio(): void {
     const a = this.audio;
-    if (!a || !state.music) return;
-    if (this.t >= state.music.duration) {
-      a.pause();
+    const m = state.music;
+    if (!a || !m) return;
+    const songT = this.t - this.plan.start;
+    const audible = this.playing && songT >= 0 && songT < m.duration && this.t < this.plan.fadeOutEnd;
+    if (!audible) {
+      if (!a.paused) a.pause();
       return;
     }
-    a.currentTime = this.t;
-    a.volume = musicGain(this.t, this.tl.total, state.settings.leadOut);
-    void a.play().catch(() => {});
+    // iPhone ignores volume, so there the preview doesn't fade; the finished video does.
+    a.volume = musicGain(this.t, this.plan);
+    if (a.paused) {
+      a.currentTime = songT;
+      void a.play().catch(() => {});
+    } else if (Math.abs(a.currentTime - songT) > 0.25) {
+      a.currentTime = songT;
+    }
+  }
+
+  /**
+   * iPhone only lets a sound start from a tap. When Play is tapped during the opening black,
+   * start the song muted and stop it at once, so it may start by itself when the first photo appears.
+   */
+  private unlockAudio(): void {
+    const a = this.audio;
+    if (!a || !a.paused) return;
+    a.muted = true;
+    a.play()
+      .then(() => {
+        if (this.t < this.plan.start || !this.playing) a.pause();
+      })
+      .catch(() => {})
+      .finally(() => {
+        a.muted = false;
+      });
   }
 
   /** First moment where photo 1 is fully visible. */
@@ -811,7 +842,8 @@ class Player {
     this.poster = false;
     this.playing = true;
     this.last = performance.now();
-    this.startAudio();
+    this.syncAudio();
+    this.unlockAudio();
     this.updateButton();
     this.raf = requestAnimationFrame(this.tick);
   }
@@ -826,7 +858,7 @@ class Player {
   seekTo(fraction: number): void {
     this.t = fraction * this.tl.total;
     this.poster = false;
-    if (this.playing) this.startAudio();
+    this.syncAudio();
     this.draw();
   }
 
@@ -851,13 +883,7 @@ class Player {
       this.pause();
       return;
     }
-    const a = this.audio;
-    if (a && !a.paused) {
-      // Fade-out at the end. (iPhone ignores volume, so there the preview doesn't fade; the video does.)
-      a.volume = musicGain(this.t, this.tl.total, state.settings.leadOut);
-      // Keep the song in step with the pictures.
-      if (Math.abs(a.currentTime - this.t) > 0.25 && this.t < (state.music?.duration ?? 0)) a.currentTime = this.t;
-    }
+    this.syncAudio();
     this.draw();
     this.raf = requestAnimationFrame(this.tick);
   };

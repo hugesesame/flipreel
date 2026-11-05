@@ -14,7 +14,7 @@ import {
   type StreamTargetChunk,
   type VideoCodec,
 } from 'mediabunny';
-import { AUDIO_CHANNELS, AUDIO_RATE, decodeSong, musicGain, pickAudioCodec } from './music';
+import { AUDIO_CHANNELS, AUDIO_RATE, decodeSong, musicGain, pickAudioCodec, songPlan, type SongPlan } from './music';
 import { FPS, FrameCache, buildTimeline, drawFrame, frameAt, photosNeeded } from './timeline';
 import { OUTPUT_SIZE, type Format, type Photo, type Settings } from './types';
 
@@ -83,20 +83,23 @@ export class AudioUnsupportedError extends Error {}
 
 /**
  * Feeds the song to the encoder in one-second pieces, so that sound and pictures stay interleaved.
- * The song is cut at the end of the video and fades out; after a shorter song, the rest is silence.
+ * Placement and fades follow `songPlan`: silent opening black, in with the first photo,
+ * out with the last. After a shorter song, the rest is silence.
  */
 class SongFeeder {
   private pos = 0; // in sample frames
   private readonly end: number;
+  private readonly offset: number; // where the song starts, in sample frames of video time
   private readonly channels: Float32Array[];
 
   constructor(
     private source: AudioSampleSource,
     song: AudioBuffer,
-    private total: number,
-    private leadOut: number,
+    total: number,
+    private plan: SongPlan,
   ) {
     this.end = Math.round(total * AUDIO_RATE);
+    this.offset = Math.round(plan.start * AUDIO_RATE);
     this.channels = Array.from({ length: AUDIO_CHANNELS }, (_, c) => song.getChannelData(Math.min(c, song.numberOfChannels - 1)));
   }
 
@@ -110,8 +113,8 @@ class SongFeeder {
         const src = this.channels[c];
         const out = data.subarray(c * n, (c + 1) * n);
         for (let i = 0; i < n; i++) {
-          const k = this.pos + i;
-          out[i] = k < src.length ? src[k] * musicGain(k / AUDIO_RATE, this.total, this.leadOut) : 0;
+          const k = this.pos + i - this.offset;
+          out[i] = k >= 0 && k < src.length ? src[k] * musicGain((this.pos + i) / AUDIO_RATE, this.plan) : 0;
         }
       }
       const sample = new AudioSample({ data, format: 'f32-planar', numberOfChannels: AUDIO_CHANNELS, sampleRate: AUDIO_RATE, timestamp: this.pos / AUDIO_RATE });
@@ -151,7 +154,7 @@ export async function exportVideo(job: ExportJob): Promise<Blob | null> {
   if (song && audioCodec) {
     const audioSource = new AudioSampleSource({ codec: audioCodec, quality: QUALITY_HIGH });
     output.addAudioTrack(audioSource);
-    feeder = new SongFeeder(audioSource, song, tl.total, settings.leadOut);
+    feeder = new SongFeeder(audioSource, song, tl.total, songPlan(tl));
     song = null; // the feeder holds what it needs
   }
   const cache = new FrameCache(photos, w, h, settings.fit, 3);
