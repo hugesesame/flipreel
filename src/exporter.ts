@@ -8,6 +8,7 @@ import {
   Mp4OutputFormat,
   Output,
   QUALITY_HIGH,
+  Quality,
   StreamTarget,
   WebMOutputFormat,
   canEncodeVideo,
@@ -24,6 +25,20 @@ const CODEC_PREFERENCE: Record<Format, VideoCodec[]> = {
 };
 
 export const MIME: Record<Format, string> = { mp4: 'video/mp4', webm: 'video/webm' };
+
+/** Safari (and every browser on iPhone/iPad) — they all use Apple's WebKit engine and its video encoder. */
+const isWebKit = /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS/.test(navigator.userAgent)
+  || /iPhone|iPad/.test(navigator.userAgent);
+
+/**
+ * Encoding quality. Chrome encodes H.264 at a fixed quality (quantizer), which handles fades well.
+ * Apple's encoder only takes a target bitrate, undershoots it, and starves fades (they turn blurry and
+ * blocky, then snap sharp at the next keyframe). Give it a generous bitrate instead: ~12 Mbps at 1080p.
+ */
+function videoQuality(codec: VideoCodec, w: number, h: number): Quality {
+  if (codec === 'avc' && isWebKit) return new Quality({ bitrate: Math.round((12_000_000 * (w * h)) / (1920 * 1080)) });
+  return QUALITY_HIGH;
+}
 
 /** Returns the codec that will be used for this format/size, or null if the browser can't encode it. */
 export async function pickCodec(format: Format, w: number, h: number): Promise<VideoCodec | null> {
@@ -146,7 +161,7 @@ export async function exportVideo(job: ExportJob): Promise<Blob | null> {
   const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('2D canvas unavailable');
 
-  const source = new CanvasSource(canvas, { codec, quality: QUALITY_HIGH, keyFrameInterval: 2 });
+  const source = new CanvasSource(canvas, { codec, quality: videoQuality(codec, w, h), keyFrameInterval: 2 });
   output.addVideoTrack(source, { frameRate: FPS });
 
   const tl = buildTimeline(photos.length, settings);
@@ -162,6 +177,7 @@ export async function exportVideo(job: ExportJob): Promise<Blob | null> {
   const dt = 1 / FPS;
 
   let finished = false;
+  let wasFading = false;
   try {
     await output.start();
     for (let i = 0; i < frameCount; i++) {
@@ -175,8 +191,13 @@ export async function exportVideo(job: ExportJob): Promise<Blob | null> {
       // Warm up the next photo while encoding the current one.
       const ahead = photosNeeded(tl, Math.min(tl.total - 0.001, ts + 1));
       ahead.forEach((p) => void cache.ensure(p));
-      drawFrame(ctx, w, h, frameAt(tl, ts), (p) => cache.peek(p));
-      await source.add(t, dt);
+      const frame = frameAt(tl, ts);
+      drawFrame(ctx, w, h, frame, (p) => cache.peek(p));
+      // Start a fresh keyframe the moment a fade has finished, so the new photo is sharp at once
+      // instead of slowly sharpening (or waiting for the next regular keyframe).
+      const settled = frame.mix === 0 && wasFading;
+      wasFading = frame.mix > 0;
+      await source.add(t, dt, settled ? { keyFrame: true } : undefined);
       if (i % 5 === 0) job.onProgress(i / frameCount);
     }
     if (feeder) await feeder.fillTo(tl.total);
