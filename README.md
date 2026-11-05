@@ -97,7 +97,3 @@ src/style.css      Styles, light and dark themes
 ```
 
 The sample photos in the screenshots are illustrations drawn for this README.
-
-## Roadmap
-
-- Background music (one track, faded out at the end)
