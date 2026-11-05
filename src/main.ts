@@ -4,7 +4,7 @@ import { HELP_ORDER, helpEntry, type HelpTopic } from './help';
 import { getLang, setLang, t, type Key, type Lang } from './i18n';
 import { icons } from './icons';
 import { History } from './history';
-import { audioFiles, loadMusic, musicGain, pickAudioCodec, songPlan, songReachesEnd, type SongPlan } from './music';
+import { audioFiles, decodeSong, loadMusic, musicGain, pickAudioCodec, songPlan, songReachesEnd, type SongPlan } from './music';
 import { imageFiles, loadPhotos } from './photos';
 import { initReorder } from './reorder';
 import { FrameCache, buildTimeline, drawFrame, frameAt, photosNeeded, type Timeline } from './timeline';
@@ -740,6 +740,67 @@ function openHelp(topic: HelpTopic): void {
 
 // ───────────────────────────── Preview player ─────────────────────────────
 
+let audioCtx: AudioContext | null = null;
+
+function audioContext(): AudioContext | null {
+  if (!audioCtx) {
+    try {
+      audioCtx = new AudioContext();
+    } catch {
+      return null;
+    }
+  }
+  return audioCtx;
+}
+
+/** Called from the tap on Play: browsers only let sound start from a user action. */
+function unlockAudio(): void {
+  // iPhone: play through the silent switch, like a video would.
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+  if (session) {
+    try {
+      session.type = 'playback';
+    } catch {
+      /* not supported */
+    }
+  }
+  const ctx = audioContext();
+  if (ctx && ctx.state !== 'running') void ctx.resume().catch(() => {});
+}
+
+/**
+ * The song decoded for the preview. Only the part the video can use is kept (the full decoded
+ * song can take 100 MB+), and it is decoded again only if a longer part is needed later.
+ */
+let songCache: { music: Music; buffer: AudioBuffer; complete: boolean } | null = null;
+let songLoading: { music: Music; need: number; job: Promise<AudioBuffer> } | null = null;
+
+function readySong(m: Music): AudioBuffer | null {
+  return songCache && songCache.music === m ? songCache.buffer : null;
+}
+
+function previewSong(m: Music, videoLength: number): Promise<AudioBuffer> {
+  const need = videoLength + 1;
+  const c = songCache;
+  if (c && c.music === m && (c.complete || c.buffer.duration >= need)) return Promise.resolve(c.buffer);
+  if (songLoading && songLoading.music === m && songLoading.need >= need) return songLoading.job;
+  const job = decodeSong(m.file).then((full) => {
+    const keep = Math.min(full.length, Math.ceil(need * full.sampleRate));
+    let buffer = full;
+    if (keep < full.length) {
+      buffer = new AudioBuffer({ length: keep, numberOfChannels: full.numberOfChannels, sampleRate: full.sampleRate });
+      for (let ch = 0; ch < full.numberOfChannels; ch++) buffer.copyToChannel(full.getChannelData(ch).subarray(0, keep), ch);
+    }
+    if (state.music === m) songCache = { music: m, buffer, complete: keep === full.length };
+    return buffer;
+  });
+  songLoading = { music: m, need, job };
+  void job.finally(() => {
+    if (songLoading?.job === job) songLoading = null;
+  }).catch(() => {});
+  return job;
+}
+
 class Player {
   private ctx: CanvasRenderingContext2D;
   private tl: Timeline;
@@ -752,12 +813,8 @@ class Player {
   private alive = true;
   /** Before the first play/seek, show the first photo instead of the black lead-in. */
   private poster: boolean;
-  /** The song, played along with the preview. */
-  private audio: HTMLAudioElement | null = null;
-  /** A play() call is in flight; don't start it again every frame. */
-  private audioStarting = false;
-  /** The browser refused to play; wait for the next tap on Play. */
-  private audioBlocked = false;
+  /** The song as it is currently scheduled (Web Audio), while playing. */
+  private song: { src: AudioBufferSourceNode; gain: GainNode } | null = null;
   private plan: SongPlan;
 
   constructor(
@@ -780,67 +837,68 @@ class Player {
     this.t = clamp(t, 0, this.tl.total);
     this.poster = this.t === 0;
     this.plan = songPlan(this.tl);
-    if (state.music) {
-      const a = new Audio(state.music.url);
-      a.preload = 'auto';
-      this.audio = a;
-    }
+    // Get the song ready, so Play can start it straight away.
+    if (state.music) void previewSong(state.music, this.tl.total).catch(() => {});
     this.draw();
   }
 
   /**
-   * Make the song match the picture: silent in the opening black, playing from the first photo,
-   * silent again once the fade-out is over or the song has ended.
-   *
-   * Kept deliberately simple, because Safari is fragile here: the song is started once and then left
-   * alone — never moved while playing (that made it skip), and the pictures never wait for it
-   * (that froze the preview). Over a short slideshow the two stay together closely enough.
+   * Schedule the song for the rest of the preview, all at once, from the current position:
+   * when it starts (with the first photo), its fade-in and its fade-out. Nothing touches it
+   * afterwards — Safari's <audio> element skipped and even hung the page when it was started late,
+   * moved or paused/resumed, so the preview uses Web Audio with everything scheduled up front.
    */
-  private syncAudio(): void {
-    const a = this.audio;
+  private startSong(): void {
     const m = state.music;
-    if (!a || !m) return;
-    const songT = this.t - this.plan.start;
-    const audible = this.playing && songT >= 0 && songT < m.duration && this.t < this.plan.fadeOutEnd;
-    if (!audible) {
-      if (!a.paused) a.pause();
+    if (!m || !this.playing) return;
+    const ctx = audioContext();
+    if (!ctx) return;
+    const buf = readySong(m);
+    if (!buf) {
+      // Not decoded yet: start as soon as it is, if still playing.
+      void previewSong(m, this.tl.total)
+        .then(() => {
+          if (this.alive && this.playing && !this.song) this.startSong();
+        })
+        .catch(() => {});
       return;
     }
-    // iPhone ignores volume, so there the preview doesn't fade; the finished video does.
-    a.volume = musicGain(this.t, this.plan);
-    if (a.paused && !this.audioStarting && !this.audioBlocked) {
-      try {
-        if (Math.abs(a.currentTime - songT) > 0.05) a.currentTime = songT;
-      } catch {
-        /* not ready to seek yet — start from where it is */
-      }
-      this.audioStarting = true;
-      a.play()
-        .catch(() => {
-          this.audioBlocked = true;
-        })
-        .finally(() => {
-          this.audioStarting = false;
-        });
-    }
+    const p = this.plan;
+    if (this.t >= p.fadeOutEnd) return;
+    const offset = Math.max(0, this.t - p.start);
+    if (offset >= buf.duration) return;
+    const now = ctx.currentTime;
+    const zero = now - this.t; // video time 0 on the audio clock
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const gain = ctx.createGain();
+    src.connect(gain).connect(ctx.destination);
+    // The volume envelope (see songPlan), from where we are now.
+    const g = gain.gain;
+    g.setValueAtTime(musicGain(this.t, p), now);
+    const points: [number, number][] = [
+      [p.start, 0],
+      [p.start + p.fadeIn, 1],
+      [p.fadeOutStart, 1],
+      [p.fadeOutEnd, 0],
+    ];
+    for (const [time, value] of points) if (time > this.t) g.linearRampToValueAtTime(value, zero + time);
+    src.start(zero + Math.max(this.t, p.start), offset);
+    src.stop(zero + p.fadeOutEnd);
+    this.song = { src, gain };
   }
 
-  /**
-   * iPhone only lets a sound start from a tap. When Play is tapped during the opening black,
-   * start the song muted and stop it at once, so it may start by itself when the first photo appears.
-   */
-  private unlockAudio(): void {
-    const a = this.audio;
-    if (!a || !a.paused) return;
-    a.muted = true;
-    a.play()
-      .then(() => {
-        if (this.t < this.plan.start || !this.playing) a.pause();
-      })
-      .catch(() => {})
-      .finally(() => {
-        a.muted = false;
-      });
+  private stopSong(): void {
+    const s = this.song;
+    this.song = null;
+    if (!s) return;
+    try {
+      s.src.stop();
+    } catch {
+      /* already stopped */
+    }
+    s.src.disconnect();
+    s.gain.disconnect();
   }
 
   /** First moment where photo 1 is fully visible. */
@@ -860,12 +918,14 @@ class Player {
     this.poster = false;
     this.playing = true;
     this.last = performance.now();
-    this.audioBlocked = false;
-    try {
-      this.syncAudio();
-      this.unlockAudio();
-    } catch (e) {
-      console.warn('Preview sound', e);
+    if (state.music) {
+      // Sound may only start from a tap: wake the audio up here, inside the tap on Play.
+      unlockAudio();
+      try {
+        this.startSong();
+      } catch (e) {
+        console.warn('Preview sound', e);
+      }
     }
     this.updateButton();
     this.raf = requestAnimationFrame(this.tick);
@@ -874,17 +934,20 @@ class Player {
   pause(): void {
     this.playing = false;
     cancelAnimationFrame(this.raf);
-    this.audio?.pause();
+    this.stopSong();
     this.updateButton();
   }
 
   seekTo(fraction: number): void {
     this.t = fraction * this.tl.total;
     this.poster = false;
-    try {
-      this.syncAudio();
-    } catch (e) {
-      console.warn('Preview sound', e);
+    if (this.playing) {
+      this.stopSong();
+      try {
+        this.startSong();
+      } catch (e) {
+        console.warn('Preview sound', e);
+      }
     }
     this.draw();
   }
@@ -892,11 +955,6 @@ class Player {
   destroy(): void {
     this.alive = false;
     this.pause();
-    if (this.audio) {
-      this.audio.removeAttribute('src');
-      this.audio.load();
-      this.audio = null;
-    }
     previewTime = this.t;
   }
 
@@ -909,12 +967,6 @@ class Player {
       this.draw();
       this.pause();
       return;
-    }
-    // Whatever goes wrong with the sound, keep the pictures moving.
-    try {
-      this.syncAudio();
-    } catch (e) {
-      console.warn('Preview sound', e);
     }
     try {
       this.draw();

@@ -187,8 +187,7 @@ const en: Record<HelpTopic, Entry> = {
 </ul>
 <p>The small line under <em>Music</em> tells you whether the song lasts until the end. To make the video about as long as the song, change <strong>Duration</strong> (seconds per photo).</p>
 <p>To use a different song, press <kbd>× Remove</kbd>, then add the new one.</p>
-<div class="help-note caution"><strong>Use music you're allowed to use.</strong> Most songs are protected by copyright. Your own recordings or royalty-free music are the safest. Some social networks mute or remove videos with copyrighted songs.</div>
-<p>On iPhone and iPad the preview doesn't fade out at the end, but the finished video does.</p>`,
+<div class="help-note caution"><strong>Use music you're allowed to use.</strong> Most songs are protected by copyright. Your own recordings or royalty-free music are the safest. Some social networks mute or remove videos with copyrighted songs.</div>`,
   },
   browsers: {
     title: 'Browsers, offline use & privacy',
@@ -362,8 +361,7 @@ const ja: Record<HelpTopic, Entry> = {
 </ul>
 <p>曲が最後まで続くかどうかは、「音楽」の下の小さな一文で確認できます。動画を曲の長さに近づけたいときは、<strong>表示時間</strong>（1 枚あたりの秒数）を変えてください。</p>
 <p>別の曲にしたいときは、<kbd>× 外す</kbd> を押してから、新しい曲を追加します。</p>
-<div class="help-note caution"><strong>使ってよい曲を選んでください。</strong>ほとんどの曲には著作権があります。自分で録音した音や、著作権フリーの曲がいちばん安心です。SNS によっては、著作権のある曲が入った動画の音を消したり、動画を削除したりすることがあります。</div>
-<p>iPhone / iPad では、プレビューの最後でフェードアウトしませんが、できあがった動画ではフェードアウトします。</p>`,
+<div class="help-note caution"><strong>使ってよい曲を選んでください。</strong>ほとんどの曲には著作権があります。自分で録音した音や、著作権フリーの曲がいちばん安心です。SNS によっては、著作権のある曲が入った動画の音を消したり、動画を削除したりすることがあります。</div>`,
   },
   browsers: {
     title: '対応ブラウザ・オフライン・プライバシー',
