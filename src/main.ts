@@ -864,15 +864,29 @@ async function addFiles(list: FileList | File[]): Promise<void> {
   render();
 }
 
+// One file input that lives in the page for good. iOS Safari can throw away an input that isn't
+// in the document while its photo picker is open, and then the chosen photos never arrive.
+// It sits outside #app so re-renders don't replace it.
+let fileInput: HTMLInputElement | null = null;
+
 function choosePhotos(): void {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*,.heic,.heif';
-  input.multiple = true;
-  input.addEventListener('change', () => {
-    if (input.files?.length) void addFiles(input.files);
-  });
-  input.click();
+  if (!fileInput) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,.heic,.heif';
+    input.multiple = true;
+    input.className = 'file-input';
+    input.tabIndex = -1;
+    input.setAttribute('aria-hidden', 'true');
+    input.addEventListener('change', () => {
+      const files = input.files ? Array.from(input.files) : [];
+      input.value = ''; // so choosing the same photos again still fires `change`
+      if (files.length) void addFiles(files);
+    });
+    document.body.append(input);
+    fileInput = input;
+  }
+  fileInput.click();
 }
 
 function movePhoto(id: number, toIndex: number): void {
