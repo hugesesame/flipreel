@@ -756,6 +756,8 @@ class Player {
   private audio: HTMLAudioElement | null = null;
   /** True once the song is actually sounding (after the browser's start-up delay). */
   private audioRunning = false;
+  /** Last song position seen, and when it last changed (to notice a stalled song). */
+  private audioSeen = { pos: -1, at: 0 };
   /** A play() call is in flight; don't start it again every frame. */
   private audioStarting = false;
   /** The browser refused to play; wait for the next tap on Play. */
@@ -835,6 +837,11 @@ class Player {
   private audioClock(): number | null {
     const a = this.audio;
     if (!a || a.paused || !this.audioRunning) return null;
+    // Safety: if the song's position isn't moving (stalled, or a browser that doesn't update it),
+    // don't follow it — otherwise the pictures would freeze with it.
+    const now = performance.now();
+    if (a.currentTime !== this.audioSeen.pos) this.audioSeen = { pos: a.currentTime, at: now };
+    else if (now - this.audioSeen.at > 300) return null;
     return this.plan.start + a.currentTime;
   }
 
