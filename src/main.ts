@@ -754,10 +754,6 @@ class Player {
   private poster: boolean;
   /** The song, played along with the preview. */
   private audio: HTMLAudioElement | null = null;
-  /** True once the song is actually sounding (after the browser's start-up delay). */
-  private audioRunning = false;
-  /** Last song position seen, and when it last changed (to notice a stalled song). */
-  private audioSeen = { pos: -1, at: 0 };
   /** A play() call is in flight; don't start it again every frame. */
   private audioStarting = false;
   /** The browser refused to play; wait for the next tap on Play. */
@@ -787,21 +783,18 @@ class Player {
     if (state.music) {
       const a = new Audio(state.music.url);
       a.preload = 'auto';
-      // Only trust the song's clock once sound is really coming out (Safari starts late).
-      a.addEventListener('playing', () => {
-        if (!a.muted) this.audioRunning = true;
-      });
-      a.addEventListener('pause', () => {
-        this.audioRunning = false;
-      });
       this.audio = a;
     }
     this.draw();
   }
 
   /**
-   * Make the song match the picture: silent in the opening black, playing (in step) from the
-   * first photo, silent again once the fade-out is over or the song has ended.
+   * Make the song match the picture: silent in the opening black, playing from the first photo,
+   * silent again once the fade-out is over or the song has ended.
+   *
+   * Kept deliberately simple, because Safari is fragile here: the song is started once and then left
+   * alone — never moved while playing (that made it skip), and the pictures never wait for it
+   * (that froze the preview). Over a short slideshow the two stay together closely enough.
    */
   private syncAudio(): void {
     const a = this.audio;
@@ -816,8 +809,11 @@ class Player {
     // iPhone ignores volume, so there the preview doesn't fade; the finished video does.
     a.volume = musicGain(this.t, this.plan);
     if (a.paused && !this.audioStarting && !this.audioBlocked) {
-      a.currentTime = songT;
-      this.audioRunning = false;
+      try {
+        if (Math.abs(a.currentTime - songT) > 0.05) a.currentTime = songT;
+      } catch {
+        /* not ready to seek yet — start from where it is */
+      }
       this.audioStarting = true;
       a.play()
         .catch(() => {
@@ -827,22 +823,6 @@ class Player {
           this.audioStarting = false;
         });
     }
-  }
-
-  /**
-   * While the song is audible, it is the clock: the pictures follow the song rather than the
-   * song being moved to match the pictures. Moving the song (seeking) makes Safari skip and stutter.
-   * Returns the video time to show, or null while the song isn't actually playing yet.
-   */
-  private audioClock(): number | null {
-    const a = this.audio;
-    if (!a || a.paused || !this.audioRunning) return null;
-    // Safety: if the song's position isn't moving (stalled, or a browser that doesn't update it),
-    // don't follow it — otherwise the pictures would freeze with it.
-    const now = performance.now();
-    if (a.currentTime !== this.audioSeen.pos) this.audioSeen = { pos: a.currentTime, at: now };
-    else if (now - this.audioSeen.at > 300) return null;
-    return this.plan.start + a.currentTime;
   }
 
   /**
@@ -881,8 +861,12 @@ class Player {
     this.playing = true;
     this.last = performance.now();
     this.audioBlocked = false;
-    this.syncAudio();
-    this.unlockAudio();
+    try {
+      this.syncAudio();
+      this.unlockAudio();
+    } catch (e) {
+      console.warn('Preview sound', e);
+    }
     this.updateButton();
     this.raf = requestAnimationFrame(this.tick);
   }
@@ -897,7 +881,11 @@ class Player {
   seekTo(fraction: number): void {
     this.t = fraction * this.tl.total;
     this.poster = false;
-    this.syncAudio();
+    try {
+      this.syncAudio();
+    } catch (e) {
+      console.warn('Preview sound', e);
+    }
     this.draw();
   }
 
@@ -916,18 +904,23 @@ class Player {
     if (!this.playing || !this.alive) return;
     this.t += (now - this.last) / 1000;
     this.last = now;
-    // Follow the song when it has drifted noticeably (small differences are left alone, for smoothness).
-    const ac = this.audioClock();
-    if (ac !== null && Math.abs(ac - this.t) > 0.08) this.t = ac;
     if (this.t >= this.tl.total) {
       this.t = this.tl.total;
       this.draw();
       this.pause();
       return;
     }
-    this.syncAudio();
-    this.draw();
-    this.raf = requestAnimationFrame(this.tick);
+    // Whatever goes wrong with the sound, keep the pictures moving.
+    try {
+      this.syncAudio();
+    } catch (e) {
+      console.warn('Preview sound', e);
+    }
+    try {
+      this.draw();
+    } finally {
+      this.raf = requestAnimationFrame(this.tick);
+    }
   };
 
   private draw(): void {
