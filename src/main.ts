@@ -575,13 +575,24 @@ function renderExport(): string {
       </div>`;
   } else if (ex.phase === 'done') {
     const startOverBtn = `<button class="secondary danger ${state.confirm === 'startOver' ? 'confirming' : ''}" data-action="start-over" data-focus="start-over">${state.confirm === 'startOver' ? t('confirmStartOver') : t('startOver')}</button>`;
+    const first = state.photos[0];
+    // The finished video as a "file card": first photo, name, length · size · resolution.
+    const head = `
+      <p class="result-title">${icons.check}${t('readyTitle')}</p>
+      <div class="result-head">
+        <div class="result-thumb ${s.aspect === '9:16' ? 'tall' : ''}" style="aspect-ratio:${w} / ${h}">
+          ${first ? `<img src="${first.url}" alt="" style="object-fit:${s.fit === 'fit' ? 'contain' : 'cover'}" />` : ''}
+        </div>
+        <div class="result-meta">
+          <p class="result-name">${esc(ex.fileName)}</p>
+          <p class="result-spec">${fmtLength(totalLength())} · ${w} × ${h} · <span class="nowrap">${fmtBytes(ex.size)}</span></p>
+        </div>
+      </div>`;
     action =
       ex.mode === 'share'
         ? `
-      <div class="done-block" role="status">
-        <span class="done-icon">${icons.checkBig}</span>
-        <p class="done-title">${t('readyTitle')}</p>
-        <p class="muted">${esc(ex.fileName)} · <span class="nowrap">${fmtBytes(ex.size)}</span></p>
+      <div class="result" role="status">
+        ${head}
         <button class="primary huge" data-action="share" data-focus="share">${icons.share}<span>${t('shareSave')}</span></button>
         <p class="muted share-hint">${t('shareHint')}</p>
         <div class="row-buttons">
@@ -590,11 +601,9 @@ function renderExport(): string {
         </div>
       </div>`
         : `
-      <div class="done-block" role="status">
-        <span class="done-icon">${icons.checkBig}</span>
-        <p class="done-title">${t('done')}</p>
-        <p>${esc(ex.mode === 'picker' ? t('savedAs', { name: ex.fileName }) : t('downloadedAs', { name: ex.fileName }))}</p>
-        <p class="muted">${ex.mode === 'picker' ? t('openFolderHint') : t('downloadFolderHint')}</p>
+      <div class="result" role="status">
+        ${head}
+        <p class="result-where">${ex.mode === 'picker' ? t('openFolderHint') : t('downloadFolderHint')}</p>
         <div class="row-buttons">
           <button class="secondary" data-action="export" data-focus="export">${t('exportAgain')}</button>
           ${startOverBtn}
@@ -925,6 +934,11 @@ async function startExport(): Promise<void> {
       if (mode === 'download') downloadBlob(blob, name);
     }
     state.exp = { phase: 'done', fileName: handle?.name ?? name, mode, size };
+    render();
+    // Bring the result card into view (it can be below the fold, especially on phones).
+    $('.result')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    releaseScreen();
+    return;
   } catch (e) {
     if (e instanceof CancelledError) state.exp = { phase: 'cancelled' };
     else {

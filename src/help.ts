@@ -33,6 +33,11 @@ interface Entry {
   body: string;
 }
 
+// Line icons for the Undo / Redo buttons, shown inline in the text.
+const inlineIcon = (d: string) =>
+  `<svg class="inline-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+const undoRedo = `${inlineIcon('M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11')} ${inlineIcon('M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13')}`;
+
 const demoCut = '<span class="demo demo-cut" aria-hidden="true"><i></i><i></i></span>';
 const demoFade = '<span class="demo demo-fade" aria-hidden="true"><i></i><i></i></span>';
 
@@ -54,7 +59,7 @@ const en: Record<HelpTopic, Entry> = {
 <p>You can go back to any step at any time with <kbd>Back</kbd> or by clicking the step names at the top. Nothing is lost.</p>
 <h3>Made a mistake? Undo it</h3>
 <p>Press <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Z</kbd> (Windows) to undo the last change — removing a photo, changing the order, or changing a setting. You can undo again and again.</p>
-<p>To redo what you undid, press <kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Y</kbd> (Windows). The ↶ ↷ buttons at the top right do the same — on a phone or tablet, use these buttons.</p>
+<p>To redo what you undid, press <kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Y</kbd> (Windows). The ${undoRedo} buttons at the top right do the same — on a phone or tablet, use these buttons.</p>
 <div class="help-note"><strong>Your photos stay on your computer.</strong> Flipbook works completely offline. Nothing is uploaded anywhere.</div>`,
   },
   photos: {
@@ -207,7 +212,7 @@ const ja: Record<HelpTopic, Entry> = {
 <p><kbd>戻る</kbd> ボタンや、画面上部のステップ名を押せば、いつでも前のステップに戻れます。設定が消えることはありません。</p>
 <h3>まちがえたときは「取り消し」</h3>
 <p><kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Z</kbd>（Windows）を押すと、直前の操作を取り消して元に戻せます。写真の削除や並べ替え、設定の変更など、何回でもさかのぼれます。</p>
-<p>取り消した操作をもう一度やり直したいときは、<kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Y</kbd>（Windows）を押します。画面右上の ↶ ↷ ボタンでも同じことができます。スマホ・タブレットではこのボタンを使ってください。</p>
+<p>取り消した操作をもう一度やり直したいときは、<kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Y</kbd>（Windows）を押します。画面右上の ${undoRedo} ボタンでも同じことができます。スマホ・タブレットではこのボタンを使ってください。</p>
 <div class="help-note"><strong>写真はお使いのパソコンの中だけで扱われます。</strong>Flipbook はインターネットにつながっていなくても動き、写真がどこかに送られることはありません。</div>`,
   },
   photos: {
