@@ -19,6 +19,7 @@ Flipbook is a single HTML file. Open it, add your photos, answer seven short que
 - **Undo / redo** (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) for photo and setting changes
 - **Preview** before export
 - **Choose where to save** (Chrome / Edge)
+- **Phones and tablets**: press and hold to reorder photos, save to Photos or share via the share sheet, screen stays on while the video is made
 - **Built-in Help** that explains every step in plain language
 - **English / Japanese** UI, **light / dark** theme
 - **Offline and private**: everything runs locally in the browser
@@ -36,8 +37,12 @@ Flipbook is a single HTML file. Open it, add your photos, answer seven short que
 | Chrome / Edge (latest) | ✅ | ✅ |
 | Safari 17+ | ✅ | — Saves to Downloads |
 | Firefox 130+ | ✅ | — Saves to Downloads |
+| iPhone / iPad: Safari (iOS 17+) | ✅ | Share sheet → *Save Video* to Photos |
+| Android: Chrome | ✅ | Share sheet, or Downloads |
 
-Flipbook has been tested in Chrome. Safari and Firefox should work based on their WebCodecs support, but haven't been tested yet.
+Flipbook has been tested in Chrome on a computer and in Chrome's phone emulation. Safari, Firefox and real phones should work based on their WebCodecs support, but haven't been tested yet.
+
+Phones can't run an HTML file saved on the device, so on a phone Flipbook needs to be opened from a web address.
 
 The Help screen explains how to make Safari and Firefox ask where to save every download.
 
@@ -77,6 +82,7 @@ src/photos.ts      Loading photos and thumbnails
 src/i18n.ts        UI strings (English / Japanese)
 src/help.ts        Help content (English / Japanese)
 src/history.ts     Undo / redo history
+src/reorder.ts     Drag to reorder (mouse, touch, pen)
 src/style.css      Styles, light and dark themes
 ```
 

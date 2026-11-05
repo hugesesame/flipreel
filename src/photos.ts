@@ -17,6 +17,8 @@ export function imageFiles(list: FileList | File[]): File[] {
 export async function loadPhotos(
   files: File[],
   onProgress: (done: number, total: number) => void,
+  /** Photos decoded at once. Keep low on phones, where memory is tight. */
+  concurrency = 4,
 ): Promise<{ photos: Photo[]; failed: string[] }> {
   const results: (Photo | null)[] = new Array(files.length).fill(null);
   const failed: string[] = [];
@@ -35,7 +37,7 @@ export async function loadPhotos(
       onProgress(++done, files.length);
     }
   };
-  await Promise.all(Array.from({ length: Math.min(4, files.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(concurrency, files.length) }, worker));
   return { photos: results.filter((p): p is Photo => p !== null), failed };
 }
 

@@ -1,10 +1,11 @@
 import './style.css';
-import { CancelledError, askSaveLocation, canChooseSaveLocation, downloadBlob, exportVideo, pickCodec, suggestedFileName } from './exporter';
+import { CancelledError, MIME, askSaveLocation, canChooseSaveLocation, downloadBlob, exportVideo, pickCodec, suggestedFileName } from './exporter';
 import { HELP_ORDER, helpEntry, type HelpTopic } from './help';
 import { getLang, setLang, t, type Key, type Lang } from './i18n';
 import { icons } from './icons';
 import { History } from './history';
 import { imageFiles, loadPhotos } from './photos';
+import { initReorder } from './reorder';
 import { FrameCache, buildTimeline, drawFrame, frameAt, photosNeeded, type Timeline } from './timeline';
 import { DEFAULT_SETTINGS, LIMITS, OUTPUT_SIZE, type Aspect, type Format, type Photo, type Settings } from './types';
 
@@ -22,10 +23,13 @@ const STEPS: { id: StepId; label: Key; help: HelpTopic }[] = [
   { id: 'export', label: 'stepExport', help: 'export' },
 ];
 
+/** picker: user chose a file (Chrome/Edge desktop). share: phone/tablet share sheet. download: Downloads folder. */
+type SaveMode = 'picker' | 'share' | 'download';
+
 type ExportState =
   | { phase: 'idle' }
   | { phase: 'running'; progress: number }
-  | { phase: 'done'; fileName: string; saved: boolean }
+  | { phase: 'done'; fileName: string; mode: SaveMode; size: number }
   | { phase: 'cancelled' }
   | { phase: 'error'; message: string };
 
@@ -54,7 +58,34 @@ const state = {
 let cancelRequested = false;
 let player: Player | null = null;
 let previewTime = 0;
-let dragId: number | null = null;
+/** The last video made in memory, kept so it can be shared or downloaded again. */
+let lastVideo: { blob: Blob; name: string } | null = null;
+let wakeLock: WakeLockSentinel | null = null;
+
+/** Phones and tablets (touch is the main input). */
+function isTouchPrimary(): boolean {
+  return matchMedia('(hover: none) and (pointer: coarse)').matches;
+}
+
+function canShareFiles(format: Format): boolean {
+  try {
+    const probe = new File([new Uint8Array(1)], `video.${format}`, { type: MIME[format] });
+    return typeof navigator.canShare === 'function' && navigator.canShare({ files: [probe] });
+  } catch {
+    return false;
+  }
+}
+
+function saveMode(format: Format): SaveMode {
+  if (isTouchPrimary() && canShareFiles(format)) return 'share';
+  if (canChooseSaveLocation()) return 'picker';
+  return 'download';
+}
+
+function fmtBytes(n: number): string {
+  // Non-breaking space keeps the number and unit together.
+  return n >= 1e9 ? `${(n / 1e9).toFixed(1)}\u00a0GB` : n >= 1e6 ? `${(n / 1e6).toFixed(1)}\u00a0MB` : `${Math.max(1, Math.round(n / 1e3))}\u00a0KB`;
+}
 
 // ───────────────────────────── Undo / redo ─────────────────────────────
 
@@ -237,7 +268,8 @@ function render(): void {
   `;
 
   if (step.id === 'export') mountPlayer();
-  if (focusKey) $<HTMLElement>(`[data-focus="${focusKey}"]`)?.focus();
+  // Keep keyboard focus where it was, without jumping the page around.
+  if (focusKey) $<HTMLElement>(`[data-focus="${focusKey}"]`)?.focus({ preventScroll: true });
 }
 
 function renderHeader(): string {
@@ -327,25 +359,26 @@ function renderPhotos(): string {
   const drop = `
     <div class="dropzone ${n ? 'compact' : ''}" data-action="choose" role="button" tabindex="0" data-focus="dropzone">
       ${n ? '' : icons.upload}
-      <p class="drop-title">${t('dropHere')}</p>
-      <p class="muted">${t('or')}</p>
+      <p class="drop-title fine-only">${t('dropHere')}</p>
+      <p class="muted fine-only">${t('or')}</p>
+      ${n ? '' : `<p class="drop-title touch-only">${t('dropTapTitle')}</p>`}
       <span class="primary big as-button">${icons.plus}${n ? t('addMore') : t('choosePhotos')}</span>
     </div>`;
   if (!n) return drop + loading;
   return `
     <div class="toolbar">
       <strong>${n === 1 ? t('photoCountOne') : t('photoCount', { count: n })}</strong>
-      <span class="muted hide-sm">${t('reorderHint')}</span>
       <span class="spacer"></span>
       <button class="secondary" data-action="sort" data-focus="sort">${icons.sort}<span>${t('sortByName')}</span></button>
       <button class="secondary danger ${state.confirm === 'removeAll' ? 'confirming' : ''}" data-action="remove-all" data-focus="remove-all">${icons.trash}<span>${state.confirm === 'removeAll' ? t('confirmRemoveAll') : t('removeAll')}</span></button>
     </div>
+    <p class="muted reorder-hint"><span class="fine-only">${t('reorderHint')}</span><span class="touch-only">${t('reorderHintTouch')}</span></p>
     ${loading}
     <ul class="grid" aria-label="${t('stepPhotos')}">
       ${state.photos
         .map(
           (p, i) => `
-        <li class="thumb" draggable="true" data-id="${p.id}">
+        <li class="thumb" data-id="${p.id}">
           <img src="${p.url}" alt="${esc(p.name)}" draggable="false" />
           <span class="badge">${i + 1}</span>
           <button class="icon-btn remove" data-action="remove" data-id="${p.id}" aria-label="${t('remove')}: ${esc(p.name)}" title="${t('remove')}">${icons.x}</button>
@@ -541,19 +574,34 @@ function renderExport(): string {
         <button class="secondary" data-action="cancel-export" data-focus="cancel">${t('cancel')}</button>
       </div>`;
   } else if (ex.phase === 'done') {
-    action = `
+    const startOverBtn = `<button class="secondary danger ${state.confirm === 'startOver' ? 'confirming' : ''}" data-action="start-over" data-focus="start-over">${state.confirm === 'startOver' ? t('confirmStartOver') : t('startOver')}</button>`;
+    action =
+      ex.mode === 'share'
+        ? `
+      <div class="done-block" role="status">
+        <span class="done-icon">${icons.checkBig}</span>
+        <p class="done-title">${t('readyTitle')}</p>
+        <p class="muted">${esc(ex.fileName)} · <span class="nowrap">${fmtBytes(ex.size)}</span></p>
+        <button class="primary huge" data-action="share" data-focus="share">${icons.share}<span>${t('shareSave')}</span></button>
+        <p class="muted share-hint">${t('shareHint')}</p>
+        <div class="row-buttons">
+          <button class="secondary" data-action="download-file" data-focus="download-file">${icons.download}<span>${t('downloadFile')}</span></button>
+          ${startOverBtn}
+        </div>
+      </div>`
+        : `
       <div class="done-block" role="status">
         <span class="done-icon">${icons.checkBig}</span>
         <p class="done-title">${t('done')}</p>
-        <p>${esc(ex.saved ? t('savedAs', { name: ex.fileName }) : t('downloadedAs', { name: ex.fileName }))}</p>
-        <p class="muted">${ex.saved ? t('openFolderHint') : t('downloadFolderHint')}</p>
+        <p>${esc(ex.mode === 'picker' ? t('savedAs', { name: ex.fileName }) : t('downloadedAs', { name: ex.fileName }))}</p>
+        <p class="muted">${ex.mode === 'picker' ? t('openFolderHint') : t('downloadFolderHint')}</p>
         <div class="row-buttons">
           <button class="secondary" data-action="export" data-focus="export">${t('exportAgain')}</button>
-          <button class="secondary danger ${state.confirm === 'startOver' ? 'confirming' : ''}" data-action="start-over" data-focus="start-over">${state.confirm === 'startOver' ? t('confirmStartOver') : t('startOver')}</button>
+          ${startOverBtn}
         </div>
       </div>`;
   } else {
-    const picker = canChooseSaveLocation();
+    const mode = saveMode(s.format);
     const msg =
       ex.phase === 'error'
         ? `<div class="notice error" role="alert">${icons.alert}<div><p>${t('exportFailed')}</p><p class="muted">${esc(t('exportFailedHint', { msg: ex.message }))}</p></div></div>`
@@ -564,9 +612,15 @@ function renderExport(): string {
       ${msg}
       ${supported === false ? `<div class="notice error" role="alert">${icons.alert}<div><p>${t('notSupported')}</p><p><button class="link" data-action="goto" data-step="2">${t('stepFormat')} ›</button></p></div></div>` : ''}
       <button class="primary huge" data-action="export" data-focus="export" ${supported === false || supported === undefined ? 'disabled' : ''}>
-        ${picker ? icons.save : icons.download}<span>${picker ? t('saveAndCreate') : t('createAndDownload')}</span>
+        ${mode === 'picker' ? icons.save : mode === 'share' ? icons.film : icons.download}<span>${t(mode === 'picker' ? 'saveAndCreate' : mode === 'share' ? 'createVideo' : 'createAndDownload')}</span>
       </button>
-      <p class="muted save-note">${picker ? t('saveAndCreateNote') : `${t('downloadNote')} <button class="link" data-action="help" data-topic="export">${t('help')}</button>`}</p>`;
+      <p class="muted save-note">${
+        mode === 'picker'
+          ? t('saveAndCreateNote')
+          : mode === 'share'
+            ? t('createVideoNote')
+            : `${t('downloadNote')} <button class="link" data-action="help" data-topic="export">${t('help')}</button>`
+      }</p>`;
   }
 
   return `
@@ -788,7 +842,7 @@ async function addFiles(list: FileList | File[]): Promise<void> {
     state.loading = { done, total };
     const el = $('.loading');
     if (el) el.innerHTML = `<span class="spinner"></span>${t('loadingPhotos', state.loading)}`;
-  });
+  }, isTouchPrimary() ? 2 : 4);
   state.loading = null;
   if (photos.length) record('actAdd');
   state.photos.push(...photos);
@@ -825,8 +879,9 @@ async function startExport(): Promise<void> {
   const s = state.settings;
   const name = suggestedFileName(s.format);
   let handle: FileSystemFileHandle | undefined;
+  let mode = saveMode(s.format);
   player?.pause();
-  if (canChooseSaveLocation()) {
+  if (mode === 'picker') {
     try {
       const h = await askSaveLocation(s.format, name);
       if (!h) return; // user closed the dialog
@@ -834,13 +889,16 @@ async function startExport(): Promise<void> {
     } catch (e) {
       // Picker blocked (e.g. some file:// contexts) — fall back to a normal download.
       console.warn('Save picker unavailable, falling back to download', e);
+      mode = 'download';
     }
   }
 
   cancelRequested = false;
+  lastVideo = null;
   state.exp = { phase: 'running', progress: 0 };
   state.confirm = null;
   render();
+  await keepScreenOn();
 
   try {
     const blob = await exportVideo({
@@ -859,20 +917,60 @@ async function startExport(): Promise<void> {
         if (label) label.textContent = `${pct}%`;
       },
     });
-    if (blob) downloadBlob(blob, name);
-    state.exp = { phase: 'done', fileName: handle?.name ?? name, saved: !!handle };
+    let size = blob?.size ?? 0;
+    if (handle) size = (await handle.getFile().catch(() => null))?.size ?? 0;
+    if (blob) {
+      lastVideo = { blob, name };
+      // On phones the user taps "Save / Share" (a fresh tap is needed to open the share sheet).
+      if (mode === 'download') downloadBlob(blob, name);
+    }
+    state.exp = { phase: 'done', fileName: handle?.name ?? name, mode, size };
   } catch (e) {
     if (e instanceof CancelledError) state.exp = { phase: 'cancelled' };
     else {
       console.error(e);
       state.exp = { phase: 'error', message: e instanceof Error ? e.message : String(e) };
     }
+  } finally {
+    releaseScreen();
   }
   render();
 }
 
+/** Keep the screen from sleeping while the video is made (phones would otherwise pause the page). */
+async function keepScreenOn(): Promise<void> {
+  try {
+    wakeLock = (await navigator.wakeLock?.request('screen')) ?? null;
+  } catch {
+    wakeLock = null;
+  }
+}
+
+function releaseScreen(): void {
+  void wakeLock?.release().catch(() => {});
+  wakeLock = null;
+}
+
+// The wake lock is dropped when the page is hidden; take it again when the user comes back.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.exp.phase === 'running' && !wakeLock) void keepScreenOn();
+});
+
+async function shareVideo(): Promise<void> {
+  if (!lastVideo) return;
+  const file = new File([lastVideo.blob], lastVideo.name, { type: lastVideo.blob.type });
+  try {
+    await navigator.share({ files: [file] });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') return; // user closed the share sheet
+    console.warn('Share failed, downloading instead', e);
+    downloadBlob(lastVideo.blob, lastVideo.name);
+  }
+}
+
 function startOver(): void {
   record('actStartOver');
+  lastVideo = null;
   state.photos = [];
   state.notice = { kind: 'info', text: t('clearedAll'), undo: true };
   state.exp = { phase: 'idle' };
@@ -993,6 +1091,12 @@ document.addEventListener('click', (e) => {
     case 'export':
       void startExport();
       return;
+    case 'share':
+      void shareVideo();
+      return;
+    case 'download-file':
+      if (lastVideo) downloadBlob(lastVideo.blob, lastVideo.name);
+      return;
     case 'cancel-export':
       cancelRequested = true;
       return;
@@ -1063,50 +1167,23 @@ window.addEventListener('drop', (e) => {
   if (hasFiles(e) && state.exp.phase !== 'running' && e.dataTransfer?.files.length) void addFiles(e.dataTransfer.files);
 });
 
-// Reordering thumbnails.
-document.addEventListener('dragstart', (e) => {
-  const li = (e.target as Element).closest<HTMLElement>('.thumb');
-  if (!li || !e.dataTransfer) return;
-  dragId = Number(li.dataset.id);
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', String(dragId));
-  li.classList.add('dragging');
-});
-document.addEventListener('dragend', () => {
-  dragId = null;
-  document.querySelectorAll('.thumb.dragging, .thumb.drop-before, .thumb.drop-after').forEach((el) => el.classList.remove('dragging', 'drop-before', 'drop-after'));
-});
-document.addEventListener('dragover', (e) => {
-  if (dragId === null) return;
-  const li = (e.target as Element).closest<HTMLElement>('.thumb');
-  document.querySelectorAll('.thumb.drop-before, .thumb.drop-after').forEach((el) => el !== li && el.classList.remove('drop-before', 'drop-after'));
-  if (!li) return;
-  e.dataTransfer!.dropEffect = 'move';
-  const r = li.getBoundingClientRect();
-  const after = e.clientX > r.left + r.width / 2;
-  li.classList.toggle('drop-after', after);
-  li.classList.toggle('drop-before', !after);
-});
-document.addEventListener('drop', (e) => {
-  if (dragId === null) return;
-  const li = (e.target as Element).closest<HTMLElement>('.thumb');
-  if (!li) return;
-  e.stopPropagation();
-  const targetId = Number(li.dataset.id);
-  const r = li.getBoundingClientRect();
-  const after = e.clientX > r.left + r.width / 2;
-  const id = dragId;
-  dragId = null;
-  if (targetId === id) return render();
-  const without = state.photos.filter((p) => p.id !== id);
-  let idx = without.findIndex((p) => p.id === targetId);
-  if (after) idx += 1;
-  const from = state.photos.findIndex((p) => p.id === id);
-  if (from === idx) return render();
-  record('actReorder');
-  const [p] = state.photos.splice(from, 1);
-  state.photos.splice(idx, 0, p);
-  render();
+// Reordering thumbnails (mouse drag, or long-press then drag on touch screens).
+initReorder({
+  item: '.thumb',
+  canStart: () => state.exp.phase !== 'running' && STEPS[state.step].id === 'photos',
+  onDrop: (id, targetId, after) => {
+    if (targetId === id) return;
+    const without = state.photos.filter((p) => p.id !== id);
+    let idx = without.findIndex((p) => p.id === targetId);
+    if (idx < 0) return;
+    if (after) idx += 1;
+    const from = state.photos.findIndex((p) => p.id === id);
+    if (from < 0 || from === idx) return;
+    record('actReorder');
+    const [p] = state.photos.splice(from, 1);
+    state.photos.splice(idx, 0, p);
+    render();
+  },
 });
 
 window.addEventListener('beforeunload', (e) => {

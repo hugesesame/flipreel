@@ -54,7 +54,7 @@ const en: Record<HelpTopic, Entry> = {
 <p>You can go back to any step at any time with <kbd>Back</kbd> or by clicking the step names at the top. Nothing is lost.</p>
 <h3>Made a mistake? Undo it</h3>
 <p>Press <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Z</kbd> (Windows) to undo the last change — removing a photo, changing the order, or changing a setting. You can undo again and again.</p>
-<p>To redo what you undid, press <kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Y</kbd> (Windows). The ↶ ↷ buttons at the top right do the same.</p>
+<p>To redo what you undid, press <kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd> (Mac) or <kbd>Ctrl</kbd> + <kbd>Y</kbd> (Windows). The ↶ ↷ buttons at the top right do the same — on a phone or tablet, use these buttons.</p>
 <div class="help-note"><strong>Your photos stay on your computer.</strong> Flipbook works completely offline. Nothing is uploaded anywhere.</div>`,
   },
   photos: {
@@ -64,11 +64,12 @@ const en: Record<HelpTopic, Entry> = {
 <ul>
   <li><strong>Drag and drop</strong> — drag photos from a folder onto this page.</li>
   <li><strong>Choose photos</strong> — press the button and pick them. To pick several at once, hold <kbd>⌘ Command</kbd> (Mac) or <kbd>Ctrl</kbd> (Windows) while clicking, or press <kbd>⌘A</kbd> / <kbd>Ctrl+A</kbd> to select all.</li>
+  <li><strong>On a phone or tablet</strong> — tap <kbd>Choose photos</kbd>. Your photo library opens; tap each photo you want, then tap <em>Add</em> (or <em>Done</em>).</li>
 </ul>
 <h3>Changing the order</h3>
 <p>The video plays the photos from top-left to bottom-right, in the numbered order.</p>
 <ul>
-  <li>Drag a photo to a new place, or</li>
+  <li>Drag a photo to a new place. <strong>On a phone or tablet</strong>, press and hold the photo until it lifts up, then move your finger. Or,</li>
   <li>use the <kbd>‹</kbd> <kbd>›</kbd> arrows on each photo to move it one place earlier or later.</li>
   <li><strong>Sort by name</strong> puts them in file-name order — handy for camera photos named like <code>IMG_0001</code>, <code>IMG_0002</code>…</li>
 </ul>
@@ -144,7 +145,14 @@ const en: Record<HelpTopic, Entry> = {
 <p>On the last step you can play a preview. When you're happy, press the big button to make the video.</p>
 <h3>Choosing where to save</h3>
 <p>In <strong>Google Chrome</strong> and <strong>Microsoft Edge</strong>, a "Save as" window opens first. Pick a folder (for example <em>Desktop</em> or <em>Movies</em>), change the name if you like, then press <kbd>Save</kbd>. The video is then made and saved right there.</p>
-<h3>Safari and Firefox</h3>
+<h3>On a phone or tablet</h3>
+<p>Press <kbd>Create video</kbd>. When it's ready, press <kbd>Save / Share</kbd>:</p>
+<ul>
+  <li><strong>iPhone / iPad</strong> — choose <em>Save Video</em> to put it in the Photos app. You can also send it with Messages, LINE, Mail and more.</li>
+  <li><strong>Android</strong> — choose an app to save or send it (for example Google Photos or Drive). <kbd>Download</kbd> saves it to the Downloads folder.</li>
+</ul>
+<p>While the video is being made, keep the screen on and stay on this page. If you switch to another app, making the video may pause.</p>
+<h3>Safari and Firefox on a computer</h3>
 <p>These browsers can't open the "Save as" window from a web page, so the video is saved to your <strong>Downloads</strong> folder. To be asked where to save every time:</p>
 <ul>
   <li><strong>Safari</strong> — <em>Safari menu › Settings › General › File download location</em> › choose <em>Ask for each download</em>.</li>
@@ -157,6 +165,7 @@ const en: Record<HelpTopic, Entry> = {
     title: 'Browsers, offline use & privacy',
     body: `
 <p>Flipbook works best in the latest <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>. Recent Safari and Firefox work too, but can only save to the Downloads folder.</p>
+<p>On phones and tablets, use <strong>Safari</strong> on iPhone / iPad (iOS 17 or later) or <strong>Chrome</strong> on Android.</p>
 <p>Flipbook is a single file. You can keep it on your computer and open it any time — <strong>no internet connection is needed</strong>.</p>
 <div class="help-note"><strong>Privacy:</strong> your photos never leave your computer. Everything — reading the photos and making the video — happens inside your browser.</div>`,
   },
@@ -198,7 +207,7 @@ const ja: Record<HelpTopic, Entry> = {
 <p><kbd>戻る</kbd> ボタンや、画面上部のステップ名を押せば、いつでも前のステップに戻れます。設定が消えることはありません。</p>
 <h3>まちがえたときは「取り消し」</h3>
 <p><kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Z</kbd>（Windows）を押すと、直前の操作を取り消して元に戻せます。写真の削除や並べ替え、設定の変更など、何回でもさかのぼれます。</p>
-<p>取り消した操作をもう一度やり直したいときは、<kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Y</kbd>（Windows）を押します。画面右上の ↶ ↷ ボタンでも同じことができます。</p>
+<p>取り消した操作をもう一度やり直したいときは、<kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>Z</kbd>（Mac）か <kbd>Ctrl</kbd> + <kbd>Y</kbd>（Windows）を押します。画面右上の ↶ ↷ ボタンでも同じことができます。スマホ・タブレットではこのボタンを使ってください。</p>
 <div class="help-note"><strong>写真はお使いのパソコンの中だけで扱われます。</strong>Flipbook はインターネットにつながっていなくても動き、写真がどこかに送られることはありません。</div>`,
   },
   photos: {
@@ -208,11 +217,12 @@ const ja: Record<HelpTopic, Entry> = {
 <ul>
   <li><strong>ドラッグ＆ドロップ</strong> — フォルダの中の写真を、マウスでつかんでこの画面の上に落とします。</li>
   <li><strong>「写真を選ぶ」ボタン</strong> — ボタンを押して写真を選びます。何枚かまとめて選ぶときは、<kbd>⌘ Command</kbd>（Mac）か <kbd>Ctrl</kbd>（Windows）を押しながらクリックします。<kbd>⌘A</kbd> / <kbd>Ctrl+A</kbd> で全部選ぶこともできます。</li>
+  <li><strong>スマホ・タブレットの場合</strong> — <kbd>写真を選ぶ</kbd> を押すと写真ライブラリが開きます。使いたい写真を順にタップして、<em>追加</em>（または <em>完了</em>）を押します。</li>
 </ul>
 <h3>順番を変えるには</h3>
 <p>動画では、写真についている番号の順（左上から右下へ）に表示されます。</p>
 <ul>
-  <li>写真をつかんで、好きな場所へ動かします。または、</li>
+  <li>写真をつかんで、好きな場所へ動かします。<strong>スマホ・タブレットでは</strong>、写真を少し長めに押して、浮き上がったらそのまま指を動かします。または、</li>
   <li>写真の <kbd>‹</kbd> <kbd>›</kbd> ボタンで、1 つ前・1 つ後ろへ動かせます。</li>
   <li><strong>「名前順に並べる」</strong>を押すと、ファイル名の順に並びます。カメラの写真（<code>IMG_0001</code>、<code>IMG_0002</code>…）なら撮った順になることが多いです。</li>
 </ul>
@@ -288,7 +298,14 @@ const ja: Record<HelpTopic, Entry> = {
 <p>最後のステップでは、プレビューを再生して確認できます。よければ大きなボタンを押して動画を作りましょう。</p>
 <h3>保存する場所を選ぶ</h3>
 <p><strong>Google Chrome</strong> と <strong>Microsoft Edge</strong> では、最初に「名前を付けて保存」の画面が開きます。保存したいフォルダ（たとえば「デスクトップ」や「ムービー」）を選び、必要ならファイル名を変えて <kbd>保存</kbd> を押してください。そのあと動画が作られ、選んだ場所に保存されます。</p>
-<h3>Safari と Firefox の場合</h3>
+<h3>スマホ・タブレットの場合</h3>
+<p><kbd>動画を作る</kbd> を押します。できあがったら <kbd>保存・共有</kbd> を押してください。</p>
+<ul>
+  <li><strong>iPhone / iPad</strong> — <em>ビデオを保存</em> を選ぶと「写真」アプリに保存されます。メッセージや LINE、メールで送ることもできます。</li>
+  <li><strong>Android</strong> — 保存先や送り先のアプリ（Google フォトやドライブなど）を選びます。<kbd>ダウンロード</kbd> を押すと「ダウンロード」フォルダに保存されます。</li>
+</ul>
+<p>動画を作っている間は、画面をつけたまま、この画面から離れないでください。ほかのアプリに切り替えると、作成が止まることがあります。</p>
+<h3>パソコンの Safari と Firefox の場合</h3>
 <p>この 2 つのブラウザでは、Web ページから「名前を付けて保存」の画面を開けないため、<strong>「ダウンロード」フォルダ</strong>に保存されます。毎回保存先を聞いてほしいときは、次のように設定してください。</p>
 <ul>
   <li><strong>Safari</strong> — <em>Safari メニュー › 設定 › 一般 › ファイルのダウンロード先</em> で <em>ダウンロードごとに確認</em> を選びます。</li>
@@ -301,6 +318,7 @@ const ja: Record<HelpTopic, Entry> = {
     title: '対応ブラウザ・オフライン・プライバシー',
     body: `
 <p>Flipbook は、最新の <strong>Google Chrome</strong> か <strong>Microsoft Edge</strong> でいちばんよく動きます。新しい Safari や Firefox でも使えますが、保存先は「ダウンロード」フォルダになります。</p>
+<p>スマホ・タブレットでは、iPhone / iPad の <strong>Safari</strong>（iOS 17 以降）か、Android の <strong>Chrome</strong> をお使いください。</p>
 <p>Flipbook は 1 つのファイルだけでできています。パソコンに保存しておけば、いつでも開いて使えます。<strong>インターネットへの接続は必要ありません。</strong></p>
 <div class="help-note"><strong>プライバシーについて：</strong>写真がお使いのパソコンの外に出ることはありません。写真の読み込みも動画づくりも、すべてブラウザの中で行われます。</div>`,
   },
