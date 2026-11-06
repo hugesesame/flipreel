@@ -26,6 +26,7 @@ const en = {
   stepDuration: 'Duration',
   stepTransition: 'Transition',
   stepBlack: 'Black',
+  stepMusic: 'Music',
   stepExport: 'Export',
 
   // Step 1 — Photos
@@ -106,6 +107,11 @@ const en = {
   timeline: 'Timeline',
 
   // Step 7 — Export
+  musicTitle: 'Music',
+  musicLead: 'Add one song if you like. No song is fine too.',
+  chooseSong: 'Choose a song',
+  musicEmptyNote: 'Without a song, the video is silent. MP3, M4A and WAV files work.',
+  musicHowItFits: 'The song starts with the first photo and fades out with the last. There is nothing to set.',
   exportTitle: 'Export',
   exportLead: 'Check the preview, then save your video.',
   play: 'Play',
@@ -119,8 +125,6 @@ const en = {
   sumBlack: 'Black (start / end)',
   sumMusic: 'Music',
   musicNone: 'None',
-  addMusic: 'Add',
-  addMusicLabel: 'Add a song',
   removeMusic: 'Remove',
   removeMusicLabel: 'Remove the song',
   musicReading: 'Reading…',
@@ -206,6 +210,7 @@ const ja: Record<Key, string> = {
   stepDuration: '表示時間',
   stepTransition: 'トランジション',
   stepBlack: '黒み',
+  stepMusic: '音楽',
   stepExport: '書き出し',
 
   photosTitle: '写真を選ぶ',
@@ -279,6 +284,11 @@ const ja: Record<Key, string> = {
   blackEnd: '最後',
   timeline: 'タイムライン',
 
+  musicTitle: '音楽',
+  musicLead: '曲を 1 曲入れられます。入れなくても大丈夫です。',
+  chooseSong: '曲を選ぶ',
+  musicEmptyNote: '入れないときは、音のない動画になります。MP3・M4A・WAV のファイルが使えます。',
+  musicHowItFits: '曲は 1 枚目の写真と一緒に始まり、最後の写真と一緒に消えていきます。設定はいりません。',
   exportTitle: '書き出し',
   exportLead: 'プレビューを確認して、動画を保存しましょう。',
   play: '再生',
@@ -292,8 +302,6 @@ const ja: Record<Key, string> = {
   sumBlack: '黒み（最初 / 最後）',
   sumMusic: '音楽',
   musicNone: 'なし',
-  addMusic: '追加',
-  addMusicLabel: '曲を追加',
   removeMusic: '外す',
   removeMusicLabel: '曲を外す',
   musicReading: '読み込み中…',

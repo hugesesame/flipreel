@@ -346,7 +346,9 @@ button:disabled {
 .stepper {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  /* One column per step, however many steps there are. */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 4px;
   padding: 0;
   margin: 0 0 16px;
@@ -1208,6 +1210,69 @@ body.reordering * {
   font-size: 14px;
   color: var(--muted);
   margin-top: 6px;
+}
+
+/* ───────── Music ───────── */
+.music-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.music-empty .secondary {
+  margin-bottom: 10px;
+}
+
+.music-empty p {
+  margin: 0;
+  max-width: 60ch;
+}
+
+/* The chosen song, as a file line: name · length · Remove. */
+.music-file {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  font-size: 17px;
+}
+
+.music-file .spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  vertical-align: -2px;
+}
+
+.music-name {
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Where the song plays, under the video's timeline. Slopes are the fade-in and fade-out. */
+.music-lane {
+  position: relative;
+  height: 12px;
+  margin-top: 6px;
+}
+
+.song-span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.timeline .music-note {
+  margin: 8px 0 0;
+  text-align: left;
+  font-size: 14px;
 }
 
 /* ───────── Export ───────── */

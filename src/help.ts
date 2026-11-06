@@ -24,8 +24,8 @@ export const HELP_ORDER: HelpTopic[] = [
   'duration',
   'transition',
   'black',
-  'export',
   'music',
+  'export',
   'browsers',
   'trouble',
 ];
@@ -48,7 +48,7 @@ const en: Record<HelpTopic, Entry> = {
     title: 'Getting started',
     body: `
 <p>Flip Reel turns your photos into a video that shows them one after another — like flipping through a photo album.</p>
-<p>You only need to go through 7 short steps. <strong>Every step already has a sensible setting</strong>, so if you're not sure, just press <kbd>Next</kbd>.</p>
+<p>You only need to go through 8 short steps. <strong>Every step already has a sensible setting</strong>, so if you're not sure, just press <kbd>Next</kbd>.</p>
 <ol class="help-steps">
   <li><strong>Photos</strong> — choose the photos and their order.</li>
   <li><strong>Aspect Ratio</strong> — the shape of the video (wide, square, tall…).</li>
@@ -56,7 +56,8 @@ const en: Record<HelpTopic, Entry> = {
   <li><strong>Duration</strong> — how many seconds each photo is shown.</li>
   <li><strong>Transition</strong> — how one photo changes into the next.</li>
   <li><strong>Black</strong> — a moment of black screen at the start and end.</li>
-  <li><strong>Export</strong> — watch a preview, add a song if you like, then save the video.</li>
+  <li><strong>Music</strong> — add a song if you like (or leave it silent).</li>
+  <li><strong>Export</strong> — watch a preview, then save the video.</li>
 </ol>
 <p>You can go back to any step at any time with <kbd>Back</kbd> or by clicking the step names at the top. Nothing is lost.</p>
 <h3>Made a mistake? Undo it</h3>
@@ -173,7 +174,7 @@ const en: Record<HelpTopic, Entry> = {
     body: `
 <p>You can add <strong>one song</strong> to your video. It's optional — without a song, the video has no sound.</p>
 <h3>Adding a song</h3>
-<p>On the <strong>Export</strong> step, press <kbd>+ Add</kbd> next to <em>Music</em> and choose a song file. On a computer you can also drop a song file onto the page.</p>
+<p>On the <strong>Music</strong> step, press <kbd>+ Choose a song</kbd> and choose a song file. On a computer you can also drop a song file onto the page.</p>
 <ul>
   <li><strong>Files that work</strong> — MP3, M4A (AAC) and WAV. Most browsers also read OGG and FLAC.</li>
   <li><strong>iPhone / iPad</strong> — songs are chosen from the <em>Files</em> app. Songs in the Music app (Apple Music or bought songs) are protected and can't be used.</li>
@@ -185,7 +186,7 @@ const en: Record<HelpTopic, Entry> = {
   <li><strong>End</strong> — as the last photo starts to go dark, the song starts to fade out too. It fades for up to about 2 seconds and is gone by the end of the video.</li>
   <li><strong>Song shorter than the video</strong> — it plays once, and the rest of the video is silent.</li>
 </ul>
-<p>The small line under <em>Music</em> tells you whether the song lasts until the end. To make the video about as long as the song, change <strong>Duration</strong> (seconds per photo).</p>
+<p>The Music step shows where the song plays under the video's timeline, and the small line below it tells you whether the song lasts until the end. To make the video about as long as the song, change <strong>Duration</strong> (seconds per photo).</p>
 <p>To use a different song, press <kbd>× Remove</kbd>, then add the new one.</p>
 <div class="help-note caution"><strong>Use music you're allowed to use.</strong> Most songs are protected by copyright. Your own recordings or royalty-free music are the safest. Some social networks mute or remove videos with copyrighted songs.</div>`,
   },
@@ -222,7 +223,7 @@ const ja: Record<HelpTopic, Entry> = {
     title: 'はじめに',
     body: `
 <p>Flip Reel（フリップリール）は、写真を 1 枚ずつ順番に見せる動画を作るアプリです。アルバムをめくっていくような動画ができます。</p>
-<p>やることは 7 つの短いステップだけです。<strong>どのステップにも最初からちょうどよい設定が入っている</strong>ので、迷ったら <kbd>次へ</kbd> を押すだけで大丈夫です。</p>
+<p>やることは 8 つの短いステップだけです。<strong>どのステップにも最初からちょうどよい設定が入っている</strong>ので、迷ったら <kbd>次へ</kbd> を押すだけで大丈夫です。</p>
 <ol class="help-steps">
   <li><strong>写真</strong> — 使う写真と、その順番を決めます。</li>
   <li><strong>アスペクト比</strong> — 動画の画面の形（横長・正方形・縦長など）を選びます。</li>
@@ -230,7 +231,8 @@ const ja: Record<HelpTopic, Entry> = {
   <li><strong>表示時間</strong> — 写真 1 枚を何秒見せるかです。</li>
   <li><strong>トランジション</strong> — 写真から次の写真への切り替え方です。</li>
   <li><strong>黒み</strong> — 最初と最後に入れる黒い画面の時間です。</li>
-  <li><strong>書き出し</strong> — プレビューを見て、よければ曲を入れて、動画を保存します。</li>
+  <li><strong>音楽</strong> — よければ曲を 1 曲入れます（入れなくても大丈夫です）。</li>
+  <li><strong>書き出し</strong> — プレビューを見て、動画を保存します。</li>
 </ol>
 <p><kbd>戻る</kbd> ボタンや、画面上部のステップ名を押せば、いつでも前のステップに戻れます。設定が消えることはありません。</p>
 <h3>まちがえたときは「取り消し」</h3>
@@ -347,7 +349,7 @@ const ja: Record<HelpTopic, Entry> = {
     body: `
 <p>動画に<strong>曲を 1 曲</strong>入れられます。入れなくてもかまいません。入れないときは音のない動画になります。</p>
 <h3>曲の入れ方</h3>
-<p><strong>書き出し</strong>のステップで、「音楽」の横の <kbd>＋ 追加</kbd> を押して、曲のファイルを選びます。パソコンでは、曲のファイルを画面にドロップしても入れられます。</p>
+<p><strong>音楽</strong>のステップで <kbd>＋ 曲を選ぶ</kbd> を押して、曲のファイルを選びます。パソコンでは、曲のファイルを画面にドロップしても入れられます。</p>
 <ul>
   <li><strong>使えるファイル</strong> — MP3・M4A（AAC）・WAV。多くのブラウザでは OGG や FLAC も使えます。</li>
   <li><strong>iPhone / iPad</strong> — 曲は「ファイル」アプリから選びます。「ミュージック」アプリの曲（Apple Music や購入した曲）は保護されているため使えません。</li>
@@ -359,7 +361,7 @@ const ja: Record<HelpTopic, Entry> = {
   <li><strong>終わり</strong> — 最後の写真が暗くなりはじめると、曲も小さくなりはじめます（フェードアウト）。最大 2 秒ほどかけて、動画の終わりまでに消えていきます。</li>
   <li><strong>曲のほうが短いとき</strong> — 1 回流れて終わり、そのあとは音なしになります。</li>
 </ul>
-<p>曲が最後まで続くかどうかは、「音楽」の下の小さな一文で確認できます。動画を曲の長さに近づけたいときは、<strong>表示時間</strong>（1 枚あたりの秒数）を変えてください。</p>
+<p>音楽のステップでは、動画のタイムラインの下に、曲が流れる部分が表示されます。曲が最後まで続くかどうかは、その下の小さな一文で確認できます。動画を曲の長さに近づけたいときは、<strong>表示時間</strong>（1 枚あたりの秒数）を変えてください。</p>
 <p>別の曲にしたいときは、<kbd>× 外す</kbd> を押してから、新しい曲を追加します。</p>
 <div class="help-note caution"><strong>使ってよい曲を選んでください。</strong>ほとんどの曲には著作権があります。自分で録音した音や、著作権フリーの曲がいちばん安心です。SNS によっては、著作権のある曲が入った動画の音を消したり、動画を削除したりすることがあります。</div>`,
   },

@@ -12,7 +12,7 @@ import { DEFAULT_SETTINGS, LIMITS, OUTPUT_SIZE, type Aspect, type Format, type M
 
 // ───────────────────────────── State ─────────────────────────────
 
-type StepId = 'photos' | 'aspect' | 'format' | 'duration' | 'transition' | 'black' | 'export';
+type StepId = 'photos' | 'aspect' | 'format' | 'duration' | 'transition' | 'black' | 'music' | 'export';
 
 const STEPS: { id: StepId; label: Key; help: HelpTopic }[] = [
   { id: 'photos', label: 'stepPhotos', help: 'photos' },
@@ -21,6 +21,7 @@ const STEPS: { id: StepId; label: Key; help: HelpTopic }[] = [
   { id: 'duration', label: 'stepDuration', help: 'duration' },
   { id: 'transition', label: 'stepTransition', help: 'transition' },
   { id: 'black', label: 'stepBlack', help: 'black' },
+  { id: 'music', label: 'stepMusic', help: 'music' },
   { id: 'export', label: 'stepExport', help: 'export' },
 ];
 
@@ -361,6 +362,8 @@ function renderStep(id: StepId): string {
       return renderTransition();
     case 'black':
       return renderBlack();
+    case 'music':
+      return renderMusic();
     case 'export':
       return renderExport();
   }
@@ -568,27 +571,73 @@ function renderBlack(): string {
     </figure>`;
 }
 
-// Step 7 — Export
-/** The Music line of the export summary: one optional song, no settings. */
-function musicRow(busy: boolean): string {
-  const m = state.music;
-  const dis = busy || state.musicLoading ? 'disabled' : '';
-  if (state.musicLoading) {
-    return `<div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="none"><span class="spinner"></span>${t('musicReading')}</dd><span></span></div>`;
-  }
-  if (!m) {
-    return `
-      <div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="none">${t('musicNone')}</dd>
-        <button class="link" data-action="add-music" data-focus="add-music" aria-label="${t('addMusicLabel')}" ${dis}>${icons.plus}${t('addMusic')}</button></div>`;
-  }
+// Step 7 — Music
+const MUSIC_STEP = STEPS.findIndex((s) => s.id === 'music');
+
+/** "Song is 1:00 · starts with the first photo, fades out with the last" */
+function musicNote(m: Music): string {
   const plan = songPlan(buildTimeline(state.photos.length, state.settings));
   // Phrases don't break inside, so a narrow screen wraps between them, not mid-word.
   const gap = getLang() === 'ja' ? '' : ' ';
-  const note = `${t('musicLen', { len: fmtLength(Math.round(m.duration)) })} · <span class="nowrap">${t('musicStarts')}</span>${gap}<span class="nowrap">${t(songReachesEnd(plan, m.duration) ? 'musicFadesOut' : 'musicEndsEarly')}</span>`;
+  return `${t('musicLen', { len: fmtLength(Math.round(m.duration)) })} · <span class="nowrap">${t('musicStarts')}</span>${gap}<span class="nowrap">${t(songReachesEnd(plan, m.duration) ? 'musicFadesOut' : 'musicEndsEarly')}</span>`;
+}
+
+function renderMusic(): string {
+  const m = state.music;
+  if (state.musicLoading) {
+    return `<p class="music-file" role="status"><span class="spinner"></span>${t('musicReading')}</p>`;
+  }
+  if (!m) {
+    return `
+      <div class="music-empty">
+        <button class="secondary big" data-action="add-music" data-focus="add-music">${icons.plus}<span>${t('chooseSong')}</span></button>
+        <p class="muted">${t('musicEmptyNote')}</p>
+        <p class="muted">${t('musicHowItFits')}</p>
+      </div>`;
+  }
+  // The song drawn under the video's timeline: where it starts, fades in, fades out and ends.
+  const s = state.settings;
+  const tl = buildTimeline(state.photos.length, s);
+  const plan = songPlan(tl);
+  const total = tl.total || 1;
+  const end = Math.min(plan.fadeOutEnd, plan.start + m.duration);
+  const reaches = songReachesEnd(plan, m.duration);
+  const len = Math.max(0.001, end - plan.start);
+  const inPct = Math.min(100, (plan.fadeIn / len) * 100);
+  const outPct = reaches ? Math.min(100, ((end - plan.fadeOutStart) / len) * 100) : 0;
+  const pct = (v: number) => `${(v / total) * 100}%`;
+  const photosLen = state.photos.length * s.duration;
   return `
-    <div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="song" title="${esc(m.name)}">${esc(m.name)}</dd>
-      <button class="link" data-action="remove-music" data-focus="remove-music" aria-label="${t('removeMusicLabel')}" ${dis}>${icons.x}${t('removeMusic')}</button>
-      <p class="music-note">${note}</p></div>`;
+    <div class="music-file">
+      <span class="music-name" title="${esc(m.name)}">${esc(m.name)}</span>
+      <span class="muted">${fmtLength(Math.round(m.duration))}</span>
+      <button class="link" data-action="remove-music" data-focus="remove-music" aria-label="${t('removeMusicLabel')}">${icons.x}${t('removeMusic')}</button>
+    </div>
+    <figure class="timeline">
+      <figcaption class="field-label">${t('timeline')} · ${fmtLength(tl.total)}</figcaption>
+      <div class="bar">
+        ${s.leadIn ? `<span class="seg black" style="flex-basis:${pct(s.leadIn)}"></span>` : ''}
+        <span class="seg photos" style="flex-basis:${pct(photosLen)}">
+          ${state.photos.slice(0, 40).map((p) => `<img src="${p.url}" alt="" />`).join('')}
+        </span>
+        ${s.leadOut ? `<span class="seg black" style="flex-basis:${pct(s.leadOut)}"></span>` : ''}
+      </div>
+      <div class="music-lane" aria-hidden="true">
+        <span class="song-span" style="left:${pct(plan.start)};width:${pct(end - plan.start)};clip-path:polygon(0 100%, ${inPct}% 0, ${100 - outPct}% 0, 100% 100%)"></span>
+      </div>
+      <p class="music-note">${musicNote(m)}</p>
+    </figure>`;
+}
+
+// Step 8 — Export
+/** The Music line of the export summary, like the other lines: what is set, and Edit. */
+function musicRow(busy: boolean): string {
+  const m = state.music;
+  const edit = `<button class="link" data-action="goto" data-step="${MUSIC_STEP}" ${busy ? 'disabled' : ''}>${icons.edit}${t('edit')}</button>`;
+  if (!m) return `<div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="none">${t('musicNone')}</dd>${edit}</div>`;
+  return `
+    <div class="sum-row music-row"><dt>${t('sumMusic')}</dt><dd class="song" title="${esc(m.name)}">${esc(m.name)}</dd>${edit}
+      <p class="music-note">${musicNote(m)}</p></div>`;
 }
 
 function renderExport(): string {
@@ -1099,7 +1148,8 @@ async function addMusic(file: File): Promise<void> {
     const music = await loadMusic(file);
     record('actAddMusic');
     state.music = music;
-    if (STEPS[state.step].id !== 'export') state.notice = { kind: 'info', text: t('musicAdded', { name: music.name }) };
+    // Elsewhere (a song dropped on another step), say where it went.
+    if (STEPS[state.step].id !== 'music' && STEPS[state.step].id !== 'export') state.notice = { kind: 'info', text: t('musicAdded', { name: music.name }) };
   } catch (e) {
     console.warn('Could not read song', e);
     state.notice = { kind: 'error', text: t('musicUnreadable', { name: file.name }), hint: t('musicUnreadableHint') };

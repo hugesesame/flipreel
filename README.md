@@ -4,7 +4,7 @@
 
 Turn your photos into a slideshow video — right in your browser.
 
-Add photos, answer seven short questions, and save an MP4 or WebM video. Everything happens on your device: your photos are never uploaded.
+Add photos, answer eight short questions, and save an MP4 or WebM video. Everything happens on your device: your photos are never uploaded.
 
 **▶ Try it: [hugesesame.github.io/flipreel](https://hugesesame.github.io/flipreel/)**
 
@@ -18,7 +18,7 @@ Add photos, answer seven short questions, and save an MP4 or WebM video. Everyth
 
 ## Features
 
-- **Seven simple steps**: Photos → Aspect Ratio → Format → Duration → Transition → Black → Export
+- **Eight simple steps**: Photos → Aspect Ratio → Format → Duration → Transition → Black → Music → Export
 - **Sensible defaults** on every step, so you can just keep pressing *Next*
 - **Aspect ratios**: 16:9, 4:3, 1:1, 9:16 — with *Fit* (whole photo, black bars) or *Fill* (crop to fill)
 - **Formats**: MP4 (H.264) or WebM (VP9), full HD (short side 1080 px), 30 fps
