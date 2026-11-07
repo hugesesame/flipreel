@@ -14,7 +14,7 @@ Add photos, answer eight short questions, and save an MP4 or WebM video. Everyth
 | --- | --- |
 | ![Aspect ratio step with a live preview of the first photo](assets/screenshots/aspect.png) | ![Export step with the finished video card](assets/screenshots/export.png) |
 
-![Flip Reel on a phone: choosing photos (English, light) and the finished video (Japanese, dark)](assets/screenshots/phones.png)
+![Flip Reel on a phone: choosing photos (light) and the finished video (dark)](assets/screenshots/phones.png)
 
 ## Features
 
@@ -99,4 +99,4 @@ src/help.ts        Help content (English / Japanese)
 src/style.css      Styles, light and dark themes
 ```
 
-The sample photos in the screenshots are illustrations drawn for this README.
+The sample photos and song in the screenshots are drawn and synthesized for this README by [tools/screenshots](tools/screenshots/). To retake the screenshots: `npm run screenshots` (needs Google Chrome).

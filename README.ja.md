@@ -14,7 +14,7 @@
 | --- | --- |
 | ![1 枚目の写真でプレビューしながらアスペクト比を選ぶ画面](assets/screenshots/aspect.png) | ![完成した動画のカードが表示された書き出し画面](assets/screenshots/export.png) |
 
-![スマホでの Flip Reel：写真選び（英語・ライト）と完成画面（日本語・ダーク）](assets/screenshots/phones.png)
+![スマホでの Flip Reel：写真選び（ライト）と完成画面（ダーク）](assets/screenshots/phones.png)
 
 ## できること
 
@@ -99,4 +99,4 @@ src/help.ts        ヘルプの本文（英語 / 日本語）
 src/style.css      スタイル（ライト / ダーク）
 ```
 
-スクリーンショットのサンプル写真は、この README のために描いたイラストです。
+スクリーンショットのサンプル写真と曲は、この README のために [tools/screenshots](tools/screenshots/) で描いたイラストと合成した音です。撮り直すときは `npm run screenshots` を実行します（Google Chrome が必要です）。
