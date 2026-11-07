@@ -88,6 +88,8 @@ export interface ExportJob {
   handle?: FileSystemFileHandle;
   /** Optional song, fitted to the video length. */
   music?: File | null;
+  /** Index of the photo used as the cover (the file's thumbnail in file lists). Default: the first. */
+  cover?: number;
   onProgress: (fraction: number) => void;
   isCancelled: () => boolean;
 }
@@ -140,6 +142,19 @@ class SongFeeder {
   }
 }
 
+/** The cover photo as it appears in the video (size, Fit/Fill), as a JPEG. Null if it can't be made. */
+async function coverImage(cache: FrameCache, index: number): Promise<{ data: Uint8Array; mimeType: string } | null> {
+  try {
+    const canvas = await cache.ensure(index);
+    if (!canvas) return null;
+    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.9 });
+    return { data: new Uint8Array(await blob.arrayBuffer()), mimeType: blob.type || 'image/jpeg' };
+  } catch (e) {
+    console.warn('Cover image', e);
+    return null;
+  }
+}
+
 export async function exportVideo(job: ExportJob): Promise<Blob | null> {
   const { photos, settings, handle } = job;
   const { w, h } = OUTPUT_SIZE[settings.aspect];
@@ -173,6 +188,9 @@ export async function exportVideo(job: ExportJob): Promise<Blob | null> {
     song = null; // the feeder holds what it needs
   }
   const cache = new FrameCache(photos, w, h, settings.fit, 3);
+  // Cover art: file lists (Finder, Windows, …) show it instead of the video's first frame, which may be black.
+  const cover = await coverImage(cache, job.cover ?? 0);
+  if (cover) output.setMetadataTags({ images: [{ ...cover, kind: 'coverFront' }] });
   const frameCount = Math.max(1, Math.round(tl.total * FPS));
   const dt = 1 / FPS;
 

@@ -151,6 +151,8 @@ const en: Record<HelpTopic, Entry> = {
     title: 'Saving your video',
     body: `
 <p>On the last step you can play a preview. When you're happy, press the big button to make the video.</p>
+<h3>The cover</h3>
+<p>The cover is the picture shown for the video in file lists, so you can find it easily even when it starts with black. It is the first photo unless you choose another: stop the preview on a scene you like and press <kbd>Use this scene as cover</kbd>. Most computer file lists use it. Some apps, such as phone photo galleries, may show the first scene instead.</p>
 <h3>Choosing where to save</h3>
 <p>In <strong>Google Chrome</strong> and <strong>Microsoft Edge</strong>, a "Save as" window opens first. Pick a folder (for example <em>Desktop</em> or <em>Movies</em>), change the name if you like, then press <kbd>Save</kbd>. The video is then made and saved right there.</p>
 <h3>On a phone or tablet</h3>
@@ -326,6 +328,8 @@ const ja: Record<HelpTopic, Entry> = {
     title: '動画の保存',
     body: `
 <p>最後のステップでは、プレビューを再生して確認できます。よければ大きなボタンを押して動画を作りましょう。</p>
+<h3>表紙</h3>
+<p>表紙は、ファイルの一覧で動画の目印になる画像です。最初が黒い動画でも、どの動画か見分けやすくなります。何もしなければ 1 枚目の写真が表紙になります。別の場面にしたいときは、プレビューを好きな場面で止めて <kbd>この場面を表紙に</kbd> を押してください。パソコンのファイル一覧の多くは表紙を使います。スマホの写真アプリなど、表紙ではなく最初の場面を表示するアプリもあります。</p>
 <h3>保存する場所を選ぶ</h3>
 <p><strong>Google Chrome</strong> と <strong>Microsoft Edge</strong> では、最初に「名前を付けて保存」の画面が開きます。保存したいフォルダ（たとえば「デスクトップ」や「ムービー」）を選び、必要ならファイル名を変えて <kbd>保存</kbd> を押してください。そのあと動画が作られ、選んだ場所に保存されます。</p>
 <h3>スマホ・タブレットの場合</h3>

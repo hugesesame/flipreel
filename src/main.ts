@@ -49,6 +49,8 @@ const state = {
   /** The one optional song. */
   music: null as Music | null,
   musicLoading: false,
+  /** Photo id chosen as the video's cover (the file's thumbnail). null = the first photo. */
+  cover: null as number | null,
   settings: loadSettings(),
   loading: null as { done: number; total: number } | null,
   notice: null as Notice | null,
@@ -99,6 +101,7 @@ function fmtBytes(n: number): string {
 interface Snapshot {
   photos: Photo[];
   music: Music | null;
+  cover: number | null;
   settings: Settings;
 }
 
@@ -119,7 +122,7 @@ const SETTING_LABEL: Record<keyof Settings, Key> = {
 };
 
 function snapshot(): Snapshot {
-  return { photos: [...state.photos], music: state.music, settings: { ...state.settings } };
+  return { photos: [...state.photos], music: state.music, cover: state.cover, settings: { ...state.settings } };
 }
 
 /** Save the current state as an undo step. Call before changing photos. */
@@ -140,6 +143,7 @@ function applyHistory(dir: 'undo' | 'redo'): void {
   }
   state.photos = [...entry.snap.photos];
   state.music = entry.snap.music;
+  state.cover = entry.snap.cover;
   state.settings = { ...entry.snap.settings };
   saveSettings();
   state.exp = { phase: 'idle' };
@@ -207,6 +211,12 @@ function fmtLength(sec: number): string {
 
 function totalLength(): number {
   return buildTimeline(state.photos.length, state.settings).total;
+}
+
+/** Index of the cover photo: the chosen one, or the first photo (also when the chosen one was removed). */
+function coverIndex(): number {
+  const i = state.photos.findIndex((p) => p.id === state.cover);
+  return i >= 0 ? i : 0;
 }
 
 function fadeMax(): number {
@@ -665,8 +675,8 @@ function renderExport(): string {
       </div>`;
   } else if (ex.phase === 'done') {
     const startOverBtn = `<button class="secondary danger ${state.confirm === 'startOver' ? 'confirming' : ''}" data-action="start-over" data-focus="start-over">${state.confirm === 'startOver' ? t('confirmStartOver') : t('startOver')}</button>`;
-    const first = state.photos[0];
-    // The finished video as a "file card": first photo, name, length · size · resolution.
+    const first = state.photos[coverIndex()];
+    // The finished video as a "file card": its cover, name, length · size · resolution.
     const head = `
       <p class="result-title">${icons.check}${t('readyTitle')}</p>
       <div class="result-head">
@@ -732,6 +742,7 @@ function renderExport(): string {
           <input type="range" id="seek" min="0" max="1000" value="0" aria-label="${t('seek')}" data-focus="seek" />
           <span class="time" id="time">0:00 / ${fmtLength(totalLength())}</span>
         </div>
+        ${renderCover(ex.phase === 'running')}
       </div>
       <div class="export-side">
         <dl class="summary-list">
@@ -747,6 +758,29 @@ function renderExport(): string {
         </dl>
         <div class="action-area">${action}</div>
       </div>
+    </div>`;
+}
+
+/**
+ * The cover: the picture a file list shows for the video. The first photo unless another scene is
+ * chosen in the preview. (A black opening would otherwise give the file a black thumbnail in some apps.)
+ */
+function renderCover(busy: boolean): string {
+  const s = state.settings;
+  const { w, h } = OUTPUT_SIZE[s.aspect];
+  const i = coverIndex();
+  const photo = state.photos[i];
+  if (!photo) return '';
+  return `
+    <div class="cover-row">
+      <div class="cover-thumb ${s.aspect === '9:16' ? 'tall' : ''}" style="aspect-ratio:${w} / ${h}">
+        <img src="${photo.url}" alt="" style="object-fit:${s.fit === 'fit' ? 'contain' : 'cover'}" />
+      </div>
+      <div class="cover-text">
+        <p><span class="cover-label">${t('coverLabel')}</span>${t('coverPhoto', { n: i + 1 })}</p>
+        <p class="muted">${t('coverNote')}</p>
+      </div>
+      <button class="secondary" id="set-cover" data-action="set-cover" data-focus="set-cover" ${busy ? 'disabled' : ''}>${t('setCover')}</button>
     </div>`;
 }
 
@@ -865,6 +899,8 @@ class Player {
   /** The song as it is currently scheduled (Web Audio), while playing. */
   private song: { src: AudioBufferSourceNode; gain: GainNode } | null = null;
   private plan: SongPlan;
+  /** Photo index on screen (null = black); undefined until the first draw. */
+  private shown: number | null | undefined = undefined;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -872,6 +908,7 @@ class Player {
     private timeEl: HTMLElement,
     private playBtn: HTMLButtonElement,
     public t: number,
+    private onShown: (photo: number | null) => void,
   ) {
     const { w, h } = OUTPUT_SIZE[state.settings.aspect];
     const scale = 960 / Math.max(w, h);
@@ -1035,9 +1072,20 @@ class Player {
     }
     // Preload what's coming up.
     photosNeeded(this.tl, Math.min(this.tl.total - 0.001, tt + 1.5)).forEach((p) => void this.cache.ensure(p));
-    drawFrame(this.ctx, this.w, this.h, frameAt(this.tl, tt), (p) => this.cache.peek(p));
+    const frame = frameAt(this.tl, tt);
+    drawFrame(this.ctx, this.w, this.h, frame, (p) => this.cache.peek(p));
+    // The photo that makes up most of the picture (during a fade, the one that is more visible).
+    const shown = frame.mix >= 0.5 ? frame.b : frame.a;
+    if (shown !== this.shown) {
+      this.shown = shown;
+      this.onShown(shown);
+    }
     this.seek.value = String(Math.round((this.t / (this.tl.total || 1)) * 1000));
     this.timeEl.textContent = `${fmtLength(Math.floor(this.t))} / ${fmtLength(this.tl.total)}`;
+  }
+
+  shownPhoto(): number | null {
+    return this.shown ?? null;
   }
 
   private updateButton(): void {
@@ -1052,7 +1100,29 @@ function mountPlayer(): void {
   const time = $('#time');
   const btn = $<HTMLButtonElement>('[data-action="play"]');
   if (!canvas || !seek || !time || !btn || state.photos.length === 0) return;
-  player = new Player(canvas, seek, time, btn, previewTime);
+  const coverBtn = $<HTMLButtonElement>('#set-cover');
+  // The cover button follows the preview: it can take the scene on screen, unless that is black or already the cover.
+  const onShown = (photo: number | null) => {
+    if (!coverBtn || state.exp.phase === 'running') return;
+    const isCover = photo === coverIndex();
+    coverBtn.disabled = photo === null || isCover;
+    coverBtn.textContent = t(isCover ? 'coverIsThis' : 'setCover');
+  };
+  player = new Player(canvas, seek, time, btn, previewTime, onShown);
+}
+
+/** Make the photo on screen in the preview the video's cover. */
+function setCover(): void {
+  const i = player?.shownPhoto();
+  if (i == null || state.exp.phase === 'running' || i === coverIndex()) return;
+  const photo = state.photos[i];
+  if (!photo) return;
+  record('actSetCover');
+  state.cover = photo.id;
+  // A video made before this has the old cover.
+  state.exp = { phase: 'idle' };
+  state.notice = null;
+  render();
 }
 
 // ───────────────────────────── Actions ─────────────────────────────
@@ -1206,6 +1276,7 @@ async function startExport(): Promise<void> {
       photos: [...state.photos],
       settings: { ...s },
       music: state.music?.file ?? null,
+      cover: coverIndex(),
       handle,
       isCancelled: () => cancelRequested,
       onProgress: (f) => {
@@ -1280,6 +1351,7 @@ function startOver(): void {
   lastVideo = null;
   state.photos = [];
   state.music = null;
+  state.cover = null;
   state.notice = { kind: 'info', text: t('clearedAll'), undo: true };
   state.exp = { phase: 'idle' };
   state.confirm = null;
@@ -1400,6 +1472,8 @@ document.addEventListener('click', (e) => {
     }
     case 'play':
       return player?.toggle();
+    case 'set-cover':
+      return setCover();
     case 'export':
       void startExport();
       return;

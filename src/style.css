@@ -1313,6 +1313,55 @@ body.reordering * {
   min-width: 0;
 }
 
+/* The cover: what file lists show for the video. A ruled line under the player, like a caption. */
+.cover-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.cover-thumb {
+  flex: none;
+  width: 72px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+  outline: 1px solid var(--border-strong);
+}
+
+.cover-thumb.tall {
+  width: 40px;
+}
+
+.cover-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cover-text {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.cover-text p {
+  margin: 0;
+}
+
+.cover-text .muted {
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.cover-label {
+  font-weight: 700;
+  margin-right: 10px;
+}
+
 .time {
   font-size: 14px;
   color: var(--muted);

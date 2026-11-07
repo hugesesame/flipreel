@@ -25,6 +25,7 @@ Add photos, answer eight short questions, and save an MP4 or WebM video. Everyth
 - **Transitions**: Cut or Fade, with adjustable fade length
 - **Black** lead-in and lead-out
 - **Music (optional)**: add one song of your own (MP3, M4A, WAV…). It is fitted to the video automatically: silent opening black, in with the first photo, fading out as the last photo goes dark
+- **Cover**: the video file carries a cover picture (the first photo, or any scene you pick in the preview), so file lists show a photo instead of the black opening
 - **Preview** before export
 - **Undo / redo** (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) for photo and setting changes
 - **Choose where to save** (Chrome / Edge on a computer)
